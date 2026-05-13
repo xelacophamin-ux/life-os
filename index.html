@@ -1336,13 +1336,16 @@ function renderEvtBlock(ev,idx,totalCols=7){
     <div class="cal-evt-s">${p2(s.getHours())}:${p2(s.getMinutes())}</div>
   </div>`;}
 
-let evColorCache={};
+// Google Calendar official colorId → hex mapping
+const GC_COLORS={
+  '1':'#7986CB','2':'#33B679','3':'#8E24AA','4':'#E67C73',
+  '5':'#F6BF26','6':'#F4511E','7':'#039BE5','8':'#616161',
+  '9':'#3F51B5','10':'#0B8043','11':'#D50000'
+};
 function evColor(ev){
-  const key=(ev.colorId||ev.organizer?.email||'default');
-  if(evColorCache[key])return evColorCache[key];
-  const colors=['#1a73e8','#0F9D58','#F4B400','#DB4437','#7986CB','#33B679','#039BE5','#E67C73'];
-  const c=colors[Object.keys(evColorCache).length%colors.length];
-  evColorCache[key]=c;return c;}
+  if(ev.colorId&&GC_COLORS[ev.colorId])return GC_COLORS[ev.colorId];
+  return '#1a73e8'; // Google blue par défaut
+}
 
 function initCalendar(){
   const scroll=document.getElementById('cal-scroll');
