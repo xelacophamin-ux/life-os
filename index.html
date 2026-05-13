@@ -1614,14 +1614,12 @@ function checkOAuthCallback(){
 // MIDNIGHT ROUTINE RESET CHECK
 // ══════════════════════════════════════════════════════════════
 function checkMidnight(){
-  const lastDate=S.get('last_open_date',null);const todayKey=D.key(new Date());
-  if(lastDate&&lastDate!==todayKey){
-    // New day — routine was already separate by date key, nothing to forcefully reset}
+  const todayKey=D.key(new Date());
   S.set('last_open_date',todayKey);
-  // Schedule next check at midnight
   const now=new Date();const tomorrow=new Date(now);
-  tomorrow.setHours(24,0,0,0);const ms=tomorrow-now;
-  setTimeout(checkMidnight,ms);}
+  tomorrow.setHours(24,0,0,0);
+  setTimeout(checkMidnight,tomorrow-now);
+}
 
 // ══════════════════════════════════════════════════════════════
 // INIT
