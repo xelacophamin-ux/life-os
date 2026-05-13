@@ -545,7 +545,7 @@ const Cal={
     const cid=this.clientId();
     if(!cid){alert('Configurez votre Google OAuth Client ID dans les Paramètres.');return;}
     const scope='https://www.googleapis.com/auth/calendar.readonly';
-    const redir=window.location.href.split('?')[0].split('#')[0];
+    const redir=window.location.href.split('?')[0].split('#')[0].replace(/\/$/,'');
     const url=`https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(cid)}&redirect_uri=${encodeURIComponent(redir)}&response_type=token&scope=${encodeURIComponent(scope)}`;
     window.location.href=url;},
   handleCallback(){
