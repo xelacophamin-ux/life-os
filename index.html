@@ -59,7 +59,14 @@ html,body{height:100%;overflow:hidden;background:#fff;font-family:-apple-system,
   .screen{top:calc(44px + env(safe-area-inset-top,0px));bottom:calc(49px + env(safe-area-inset-bottom,0px))}
   .tab-bar{height:calc(49px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px)}
   .fab-settings{top:calc(env(safe-area-inset-top,0px) + 7px)}
+  .rte-kb-toolbar{bottom:calc(49px + env(safe-area-inset-bottom,0px))}
 }
+/* JS-detected standalone (more reliable on iOS than media query) */
+html.ios-standalone .nav{height:calc(44px + env(safe-area-inset-top,0px));padding-top:env(safe-area-inset-top,0px)}
+html.ios-standalone .screen{top:calc(44px + env(safe-area-inset-top,0px));bottom:calc(49px + env(safe-area-inset-bottom,0px))}
+html.ios-standalone .tab-bar{height:calc(49px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px)}
+html.ios-standalone .fab-settings{top:calc(env(safe-area-inset-top,0px) + 7px)}
+html.ios-standalone .rte-kb-toolbar{bottom:calc(49px + env(safe-area-inset-bottom,0px))}
 
 /* ── DESKTOP SHELL ── */
 @media(min-width:768px){
@@ -198,9 +205,9 @@ html,body{height:100%;overflow:hidden;background:#fff;font-family:-apple-system,
 .txt-line::placeholder{color:var(--sep)}
 
 /* ── RICH TEXT EDITOR ── */
-.rte-wrap{display:flex;flex-direction:column;min-height:200px}
-.rte-body{padding:14px 16px 20px;outline:none;font-size:17px;line-height:1.7;color:var(--text);
-  word-break:break-word;min-height:160px}
+.rte-wrap{display:flex;flex-direction:column}
+.rte-body{padding:14px 16px 160px;outline:none;font-size:17px;line-height:1.7;color:var(--text);
+  word-break:break-word;min-height:200px}
 .rte-body:empty::before{content:'Commencez à écrire…';color:rgba(60,60,67,.25);pointer-events:none}
 .rte-body h1{font-size:24px;font-weight:700;line-height:1.2;margin:14px 0 4px;letter-spacing:-.3px}
 .rte-body h2{font-size:20px;font-weight:600;line-height:1.3;margin:10px 0 4px;letter-spacing:-.2px}
@@ -212,21 +219,34 @@ html,body{height:100%;overflow:hidden;background:#fff;font-family:-apple-system,
 .rte-body th{background:var(--bg);font-weight:600;font-size:13px;color:var(--sec);text-align:left}
 .rte-body input[type=checkbox]{width:16px;height:16px;margin-right:8px;vertical-align:middle;
   accent-color:var(--orange);pointer-events:all;cursor:pointer}
+/* Desktop inline toolbar */
 .rte-toolbar{display:flex;align-items:center;gap:1px;padding:5px 8px;
-  background:rgba(255,255,255,.97);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  border-top:.5px solid var(--sep);overflow-x:auto;-webkit-overflow-scrolling:touch;
+  background:rgba(255,255,255,.97);border-top:.5px solid var(--sep);overflow-x:auto;
   scrollbar-width:none;flex-shrink:0;position:sticky;bottom:0;z-index:20}
 .rte-toolbar::-webkit-scrollbar{display:none}
-.rte-sep{width:.5px;height:20px;background:var(--sep);margin:0 4px;flex-shrink:0}
-.rtb{min-width:32px;height:30px;border:none;border-radius:6px;background:transparent;cursor:pointer;
+@media(max-width:767px){.rte-toolbar{display:none!important}}
+/* Global floating keyboard toolbar (mobile) */
+.rte-kb-toolbar{position:fixed;left:0;right:0;bottom:49px;z-index:250;
+  display:none;align-items:center;padding:0 6px;height:44px;
+  background:rgba(249,249,249,.98);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:.5px solid var(--sep);overflow-x:auto;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none}
+.rte-kb-toolbar.active{display:flex}
+.rte-kb-toolbar::-webkit-scrollbar{display:none}
+.rte-sep{width:.5px;height:20px;background:var(--sep);margin:0 5px;flex-shrink:0}
+.rtb{min-width:34px;height:34px;border:none;border-radius:7px;background:transparent;cursor:pointer;
   display:flex;align-items:center;justify-content:center;font-family:inherit;font-size:14px;
-  color:var(--text);padding:0 6px;transition:background .1s;flex-shrink:0;
+  color:var(--text);padding:0 4px;transition:background .1s;flex-shrink:0;
   -webkit-tap-highlight-color:transparent}
-.rtb:hover,.rtb:active{background:rgba(0,0,0,.06)}
-.rtb svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.rtb-b{font-weight:700;font-size:15px;letter-spacing:-.2px}
-.rtb-i{font-style:italic;font-size:15px}
-.rtb-u{text-decoration:underline;font-size:15px}
+.rtb:active{background:rgba(0,0,0,.08)}
+.rtb svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.rtb-b{font-weight:700;font-size:16px}
+.rtb-i{font-style:italic;font-size:16px}
+.rtb-u{text-decoration:underline;font-size:16px}
+/* Note icon edit */
+.note-icon-edit{font-size:48px;text-align:center;padding:20px 0 6px;cursor:pointer;line-height:1;
+  display:block;width:100%;border:none;background:transparent;-webkit-tap-highlight-color:transparent}
+.note-icon-hint{text-align:center;font-size:11px;color:var(--sec);margin-bottom:8px}
 
 /* Sport table */
 .sport-tbl{width:100%;border-collapse:collapse;margin:8px 0;font-size:15px}
@@ -738,6 +758,23 @@ function mobileShell(){
     </div>
   </nav>
   <button class="fab-settings" onclick="openSettings()" title="Paramètres"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+  <div class="rte-kb-toolbar" id="rte-kb-toolbar">
+    <button class="rtb rtb-b" onmousedown="event.preventDefault();fmt('bold')"><b>B</b></button>
+    <button class="rtb rtb-i" onmousedown="event.preventDefault();fmt('italic')"><i>I</i></button>
+    <button class="rtb rtb-u" onmousedown="event.preventDefault();fmt('underline')"><u>U</u></button>
+    <button class="rtb" onmousedown="event.preventDefault();fmt('strikeThrough')" style="font-size:15px;text-decoration:line-through">S</button>
+    <div class="rte-sep"></div>
+    <button class="rtb" onmousedown="event.preventDefault();fmt('formatBlock','h1')" style="font-size:14px;font-weight:700;letter-spacing:-.3px">Title</button>
+    <button class="rtb" onmousedown="event.preventDefault();fmt('formatBlock','h2')" style="font-size:12px;font-weight:600">Head.</button>
+    <button class="rtb" onmousedown="event.preventDefault();fmt('formatBlock','p')" style="font-size:12px;color:var(--sec)">Body</button>
+    <div class="rte-sep"></div>
+    <button class="rtb" onmousedown="event.preventDefault();fmt('insertUnorderedList')" title="Bullet"><svg viewBox="0 0 24 24"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1" fill="currentColor" stroke="none"/></svg></button>
+    <button class="rtb" onmousedown="event.preventDefault();fmt('insertOrderedList')" title="Numérotée"><svg viewBox="0 0 24 24"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></button>
+    <button class="rtb" onmousedown="event.preventDefault();insertRteCheckbox()" title="Checklist"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></button>
+    <div class="rte-sep"></div>
+    <button class="rtb" onmousedown="event.preventDefault();insertRteTable()" title="Tableau"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg></button>
+    <button class="rtb" onmousedown="event.preventDefault();fmt('removeFormat')" title="Effacer" style="color:var(--sec)"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></button>
+  </div>
 </div>`;
 }
 
@@ -979,11 +1016,15 @@ function renderNoteContent(id){
 
 function renderNoteBody(n){
   const titleHtml=`<textarea class="note-big-title" id="note-title-${n.id}"
-  onchange="updateNoteTitle('${n.id}',this.value)" rows="1"
-  oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'">${esc(n.title)}</textarea>
+  rows="1"
+  oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';deb('ttl-${n.id}',()=>updateNoteTitle('${n.id}',this.value),400)"
+  onchange="updateNoteTitle('${n.id}',this.value)">${esc(n.title)}</textarea>
 <div class="note-divider"></div>`;
   switch(n.type){
-    case 'text': return `<div style="padding:16px 16px 0;background:var(--card)">${titleHtml}</div>`+renderRichTextNote(n);
+    case 'text': return `<div style="padding:0 16px 0;background:var(--card)">
+<button class="note-icon-edit" onclick="editNoteIcon('${n.id}')">${n.icon||'📝'}</button>
+<div class="note-icon-hint">Appuyer pour changer</div>
+${titleHtml}</div>`+renderRichTextNote(n);
     case 'checklist': return titleHtml+renderChecklist(n,false);
     case 'routine': return titleHtml+renderRoutineNote(n);
     case 'sport': return titleHtml+renderSportNote(n);
@@ -1054,24 +1095,24 @@ function renderRichTextNote(n){
   if(!html)html='<p><br></p>';
   return`<div class="rte-wrap">
   <div class="rte-body" id="rte-${n.id}" contenteditable="true"
+    onfocus="rteShow('${n.id}')"
+    onblur="rteHide()"
     oninput="deb('rte-${n.id}',()=>saveRTE('${n.id}',document.getElementById('rte-${n.id}').innerHTML),600)"
     onkeydown="rteKeydown(event)">${html}</div>
   <div class="rte-toolbar">
-    <button class="rtb rtb-b" onmousedown="event.preventDefault();fmt('bold')" title="Gras">B</button>
-    <button class="rtb rtb-i" onmousedown="event.preventDefault();fmt('italic')" title="Italique">I</button>
-    <button class="rtb rtb-u" onmousedown="event.preventDefault();fmt('underline')" title="Souligné">U</button>
+    <button class="rtb rtb-b" onmousedown="event.preventDefault();fmt('bold')"><b>B</b></button>
+    <button class="rtb rtb-i" onmousedown="event.preventDefault();fmt('italic')"><i>I</i></button>
+    <button class="rtb rtb-u" onmousedown="event.preventDefault();fmt('underline')"><u>U</u></button>
     <div class="rte-sep"></div>
-    <button class="rtb" onmousedown="event.preventDefault();fmt('formatBlock','h1')" title="Titre" style="font-size:13px;font-weight:700">T1</button>
-    <button class="rtb" onmousedown="event.preventDefault();fmt('formatBlock','h2')" title="Sous-titre" style="font-size:13px;font-weight:600">T2</button>
-    <button class="rtb" onmousedown="event.preventDefault();fmt('formatBlock','p')" title="Normal" style="font-size:13px">¶</button>
+    <button class="rtb" onmousedown="event.preventDefault();fmt('formatBlock','h1')" style="font-size:13px;font-weight:700">Title</button>
+    <button class="rtb" onmousedown="event.preventDefault();fmt('formatBlock','h2')" style="font-size:11px;font-weight:600">Head.</button>
+    <button class="rtb" onmousedown="event.preventDefault();fmt('formatBlock','p')" style="font-size:11px;color:var(--sec)">Body</button>
     <div class="rte-sep"></div>
-    <button class="rtb" onmousedown="event.preventDefault();fmt('insertUnorderedList')" title="Liste à puces"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
-    <button class="rtb" onmousedown="event.preventDefault();fmt('insertOrderedList')" title="Liste numérotée"><svg viewBox="0 0 24 24"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></button>
-    <div class="rte-sep"></div>
-    <button class="rtb" onmousedown="event.preventDefault();insertRteCheckbox()" title="Case à cocher"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></button>
-    <button class="rtb" onmousedown="event.preventDefault();insertRteTable()" title="Tableau"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg></button>
-    <div class="rte-sep"></div>
-    <button class="rtb" onmousedown="event.preventDefault();fmt('removeFormat')" title="Effacer formatage" style="font-size:13px;color:var(--sec)"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
+    <button class="rtb" onmousedown="event.preventDefault();fmt('insertUnorderedList')"><svg viewBox="0 0 24 24"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1" fill="currentColor" stroke="none"/></svg></button>
+    <button class="rtb" onmousedown="event.preventDefault();fmt('insertOrderedList')"><svg viewBox="0 0 24 24"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></button>
+    <button class="rtb" onmousedown="event.preventDefault();insertRteCheckbox()"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></button>
+    <button class="rtb" onmousedown="event.preventDefault();insertRteTable()"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg></button>
+    <button class="rtb" onmousedown="event.preventDefault();fmt('removeFormat')" style="color:var(--sec)"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
   </div>
 </div>`;}
 
@@ -1083,6 +1124,43 @@ window.fmt=function(cmd,val){
 
 window.rteKeydown=function(e){
   if(e.key==='Tab'){e.preventDefault();document.execCommand('insertHTML',false,'&nbsp;&nbsp;&nbsp;&nbsp;');}};
+
+// ── RTE KEYBOARD TOOLBAR ───────────────────────────────────────
+window.rteShow=function(id){
+  const bar=document.getElementById('rte-kb-toolbar');
+  if(!bar)return;
+  bar.classList.add('active');
+  rteUpdatePos();
+};
+window.rteHide=function(){
+  setTimeout(()=>{
+    if(document.activeElement&&document.activeElement.classList.contains('rte-body'))return;
+    const bar=document.getElementById('rte-kb-toolbar');
+    if(bar){bar.classList.remove('active');bar.style.bottom='';}
+  },200);
+};
+window.rteUpdatePos=function(){
+  const bar=document.getElementById('rte-kb-toolbar');
+  if(!bar||!bar.classList.contains('active'))return;
+  if(window.visualViewport){
+    const kbH=window.innerHeight-window.visualViewport.height-window.visualViewport.offsetTop;
+    const tabH=document.querySelector('.tab-bar')?.offsetHeight||49;
+    bar.style.bottom=Math.max(kbH,tabH)+'px';
+  }
+};
+window.editNoteIcon=function(id){
+  const n=Frame.note(id);if(!n)return;
+  const cur=n.icon||'📝';
+  const v=prompt('Changer l\'emoji de la note :',cur);
+  if(v===null)return;
+  const icon=[...v.trim()][0]||'📝';
+  Frame.update(id,note=>{note.icon=icon;});
+  const btn=document.querySelector('.note-icon-edit');
+  if(btn)btn.textContent=icon;
+  // refresh list in background
+  const sm=document.getElementById('screen-main');
+  if(sm&&A.tab==='frame')sm.innerHTML=renderFrameMobile();
+};
 
 window.insertRteTable=function(){
   document.execCommand('insertHTML',false,
@@ -1816,6 +1894,10 @@ function checkMidnight(){
 // INIT
 // ══════════════════════════════════════════════════════════════
 function init(){
+  // Detect iOS standalone PWA mode (more reliable than @media display-mode)
+  if(window.navigator.standalone===true){
+    document.documentElement.classList.add('ios-standalone');
+  }
   checkOAuthCallback();
   checkMidnight();
 
@@ -1856,13 +1938,17 @@ function init(){
     const m=window.innerWidth<768;
     if(m!==lastMobile){lastMobile=m;render();}
   });
-  // visualViewport for keyboard avoidance on log
+  // visualViewport: RTE toolbar position + log scroll
   if(window.visualViewport){
-    window.visualViewport.addEventListener('resize',()=>{
+    const vvHandler=()=>{
+      rteUpdatePos();
       const active=document.activeElement;
       if(active&&active.classList.contains('log-inp')){
         active.scrollIntoView({behavior:'smooth',block:'center'});}
-    });}
+    };
+    window.visualViewport.addEventListener('resize',vvHandler);
+    window.visualViewport.addEventListener('scroll',vvHandler);
+  }
 }
 
 document.addEventListener('DOMContentLoaded',init);
