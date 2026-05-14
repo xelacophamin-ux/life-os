@@ -24,7 +24,9 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 
 /* ── MOBILE SHELL ── */
 .sh-m{display:flex;flex-direction:column;height:100%;background:var(--bg)}
-.nav{position:fixed;top:0;left:0;right:0;height:calc(44px + var(--st));padding-top:var(--st);
+.nav{position:fixed;top:0;left:0;right:0;
+  height:calc(44px + env(safe-area-inset-top,0px));
+  padding-top:env(safe-area-inset-top,0px);
   background:rgba(242,242,247,.9);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   border-bottom:.5px solid var(--sep);display:flex;align-items:center;
   padding-left:16px;padding-right:16px;z-index:200;gap:8px}
@@ -34,12 +36,16 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 .nav-back::before{content:'‹';font-size:24px;line-height:1}
 .nav-right{color:var(--blue);font-size:17px;background:none;border:none;cursor:pointer;
   font-family:inherit;padding:8px 0;min-width:64px;text-align:right}
-.wrap{flex:1;overflow:hidden;position:relative;padding-top:calc(44px + var(--st));padding-bottom:calc(49px + var(--sb))}
+.wrap{flex:1;overflow:hidden;position:relative;
+  padding-top:calc(44px + env(safe-area-inset-top,0px));
+  padding-bottom:calc(49px + env(safe-area-inset-bottom,0px))}
 .screen{position:absolute;top:0;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg)}
 .screen.slide-out{transform:translateX(-30%);transition:transform .3s ease;pointer-events:none}
 .screen.slide-in{transform:translateX(100%)}
 .screen.slide-in.active{transform:translateX(0);transition:transform .3s ease}
-.tab-bar{position:fixed;bottom:0;left:0;right:0;height:calc(49px + var(--sb));padding-bottom:var(--sb);
+.tab-bar{position:fixed;bottom:0;left:0;right:0;
+  height:calc(49px + env(safe-area-inset-bottom,0px));
+  padding-bottom:env(safe-area-inset-bottom,0px);
   background:rgba(255,255,255,.9);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   border-top:.5px solid var(--sep);display:flex;align-items:stretch;z-index:200}
 .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
@@ -47,8 +53,8 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 .tab.on{color:var(--blue)}
 .tab svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .tab-dot{position:absolute;top:6px;right:calc(50% - 16px);width:6px;height:6px;border-radius:50%;background:var(--blue)}
-.fab-settings{position:fixed;top:calc(var(--st) + 7px);right:16px;z-index:210;background:none;
-  border:none;cursor:pointer;color:var(--blue);font-size:20px;width:30px;height:30px;
+.fab-settings{position:fixed;top:calc(env(safe-area-inset-top,0px) + 7px);right:16px;z-index:210;background:none;
+  border:none;cursor:pointer;color:var(--blue);width:30px;height:30px;
   display:flex;align-items:center;justify-content:center}
 
 /* ── DESKTOP SHELL ── */
@@ -1726,11 +1732,27 @@ window.closeSettings=function(){const o=document.getElementById('settings-overla
 // GOOGLE OAUTH CALLBACK
 // ══════════════════════════════════════════════════════════════
 function checkOAuthCallback(){
+  const h=window.location.hash.substring(1);
+  if(!h)return;
+  const p=new URLSearchParams(h);
+
+  // Silent auth error — interaction required from user
+  const err=p.get('error');
+  if(err){
+    history.replaceState({},'',location.pathname);
+    if(err==='interaction_required'||err==='login_required'||err==='consent_required'){
+      S.set('oauth_silent_failed','1'); // stop retrying silently
+    }
+    return;
+  }
+
   if(Cal.handleCallback()){
-    A.tab='calendar';// fetch current week
+    S.del('oauth_silent_failed'); // success — clear failure flag
+    A.tab='calendar';
     const wdates=D.weekDates(new Date());
     Cal.fetchRange(wdates[0],D.addDays(wdates[6],1)).then(()=>{
-      if(A.mobile())renderMainScreen();else switchTab('calendar',true);});}
+      if(A.mobile())renderMainScreen();else switchTab('calendar',true);});
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1750,7 +1772,28 @@ function checkMidnight(){
 function init(){
   checkOAuthCallback();
   checkMidnight();
+
+  // Auto silent reconnect: if token expired and we have a client ID, try prompt=none
+  if(Cal.clientId()&&!Cal.valid()&&!S.get('oauth_silent_failed')){
+    const scope='https://www.googleapis.com/auth/calendar.readonly';
+    const redir=(location.origin+location.pathname).replace(/\/$/,'');
+    window.location.href=`https://accounts.google.com/o/oauth2/v2/auth`+
+      `?client_id=${encodeURIComponent(Cal.clientId())}`+
+      `&redirect_uri=${encodeURIComponent(redir)}`+
+      `&response_type=token`+
+      `&scope=${encodeURIComponent(scope)}`+
+      `&prompt=none`;
+    return; // will redirect back and re-run init
+  }
+
   render();
+
+  // Auto-sync calendar events on startup (keeps data fresh across devices)
+  if(Cal.valid()){
+    const wdates=D.weekDates(new Date());
+    Cal.fetchRange(wdates[0],D.addDays(wdates[6],1)).catch(()=>{});
+  }
+
   // Handle resize
   let lastMobile=window.innerWidth<768;
   window.addEventListener('resize',()=>{
