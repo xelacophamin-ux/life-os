@@ -45,7 +45,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   cursor:pointer;padding:6px 0;color:var(--sec);font-size:10px;font-weight:500;position:relative}
 .tab.on{color:var(--blue)}
-.tab svg{width:24px;height:24px;fill:currentColor}
+.tab svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .tab-dot{position:absolute;top:6px;right:calc(50% - 16px);width:6px;height:6px;border-radius:50%;background:var(--blue)}
 .fab-settings{position:fixed;top:calc(var(--st) + 7px);right:16px;z-index:210;background:none;
   border:none;cursor:pointer;color:var(--blue);font-size:20px;width:30px;height:30px;
@@ -63,7 +63,8 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
     cursor:pointer;color:var(--text);font-size:14px;transition:background .1s;user-select:none}
   .side-item:hover:not(.on){background:rgba(0,0,0,.06)}
   .side-item.on{background:var(--blue);color:#fff}
-  .side-icon{font-size:16px;width:22px;text-align:center}
+  .side-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .side-icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   .side-sp{flex:1}
   .side-div{height:1px;background:rgba(0,0,0,.1);margin:8px 16px}
   .cpanel{flex:1;height:100%;overflow:hidden;background:var(--card);position:relative}
@@ -186,6 +187,37 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
   outline:none;font-family:inherit;resize:none;min-height:28px;display:block}
 .txt-line::placeholder{color:var(--sep)}
 
+/* ── RICH TEXT EDITOR ── */
+.rte-wrap{display:flex;flex-direction:column;min-height:200px}
+.rte-body{padding:14px 16px 20px;outline:none;font-size:17px;line-height:1.7;color:var(--text);
+  word-break:break-word;min-height:160px}
+.rte-body:empty::before{content:'Commencez à écrire…';color:rgba(60,60,67,.25);pointer-events:none}
+.rte-body h1{font-size:24px;font-weight:700;line-height:1.2;margin:14px 0 4px;letter-spacing:-.3px}
+.rte-body h2{font-size:20px;font-weight:600;line-height:1.3;margin:10px 0 4px;letter-spacing:-.2px}
+.rte-body ul,.rte-body ol{padding-left:22px;margin:4px 0}
+.rte-body li{margin:2px 0;line-height:1.6}
+.rte-body blockquote{border-left:3px solid var(--sep);margin:6px 0;padding:0 14px;color:var(--sec)}
+.rte-body table{border-collapse:collapse;width:100%;margin:10px 0;font-size:15px}
+.rte-body td,.rte-body th{border:1px solid var(--sep);padding:6px 10px}
+.rte-body th{background:var(--bg);font-weight:600;font-size:13px;color:var(--sec);text-align:left}
+.rte-body input[type=checkbox]{width:16px;height:16px;margin-right:8px;vertical-align:middle;
+  accent-color:var(--orange);pointer-events:all;cursor:pointer}
+.rte-toolbar{display:flex;align-items:center;gap:1px;padding:5px 8px;
+  background:rgba(255,255,255,.97);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border-top:.5px solid var(--sep);overflow-x:auto;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;flex-shrink:0;position:sticky;bottom:0;z-index:20}
+.rte-toolbar::-webkit-scrollbar{display:none}
+.rte-sep{width:.5px;height:20px;background:var(--sep);margin:0 4px;flex-shrink:0}
+.rtb{min-width:32px;height:30px;border:none;border-radius:6px;background:transparent;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-family:inherit;font-size:14px;
+  color:var(--text);padding:0 6px;transition:background .1s;flex-shrink:0;
+  -webkit-tap-highlight-color:transparent}
+.rtb:hover,.rtb:active{background:rgba(0,0,0,.06)}
+.rtb svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.rtb-b{font-weight:700;font-size:15px;letter-spacing:-.2px}
+.rtb-i{font-style:italic;font-size:15px}
+.rtb-u{text-decoration:underline;font-size:15px}
+
 /* Sport table */
 .sport-tbl{width:100%;border-collapse:collapse;margin:8px 0;font-size:15px}
 .sport-tbl th{background:#F2F2F7;padding:7px 10px;border:1px solid var(--sep);font-size:13px;
@@ -215,7 +247,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
   .nd-folder-item.on{background:rgba(0,122,255,.15);color:var(--blue)}
   .nd-folder-item:not(.on):hover{background:rgba(0,0,0,.05)}
   .nd-list{width:280px;border-right:1px solid var(--sep);overflow-y:auto}
-  .nd-content{flex:1;overflow-y:auto;padding:28px 36px}
+  .nd-content{flex:1;overflow-y:auto;display:flex;flex-direction:column}
   .note-big-title{font-size:30px}
 }
 
@@ -241,82 +273,89 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
    CALENDAR
 ══════════════════════════════════════════════ */
 .cal-connect{display:flex;flex-direction:column;align-items:center;justify-content:center;
-  height:100%;padding:40px 32px;gap:20px;text-align:center}
-.cal-connect-icon{font-size:72px}
-.cal-connect-title{font-size:26px;font-weight:700}
-.cal-connect-sub{font-size:16px;color:var(--sec);line-height:1.5}
+  height:100%;padding:40px 32px;gap:16px;text-align:center;background:#fff}
+.cal-connect-logo{display:flex;justify-content:center;margin-bottom:4px}
+.cal-connect-title{font-size:22px;font-weight:400;color:#3C4043;letter-spacing:-.2px}
+.cal-connect-sub{font-size:14px;color:#5F6368;line-height:1.6;max-width:280px}
 .g-btn{background:#fff;border:1px solid #DADCE0;border-radius:4px;padding:10px 24px;
-  display:flex;align-items:center;gap:12px;cursor:pointer;font-size:15px;font-weight:500;
-  color:#3C4043;box-shadow:0 1px 3px rgba(0,0,0,.1);font-family:inherit}
-.g-logo{font-size:20px;line-height:1}
+  display:flex;align-items:center;gap:12px;cursor:pointer;font-size:14px;font-weight:500;
+  color:#3C4043;box-shadow:0 1px 2px rgba(0,0,0,.08);font-family:inherit;letter-spacing:.25px}
+.g-btn:hover{background:#F8F9FA;box-shadow:0 1px 3px rgba(0,0,0,.15)}
 
 /* Calendar header */
-.cal-hd{background:#1a73e8;color:#fff;padding:8px 16px;display:flex;align-items:center;gap:16px;
-  flex-shrink:0}
-.cal-hd-title{font-size:17px;font-weight:500;flex:1}
-.cal-icon-btn{background:none;border:none;color:#fff;cursor:pointer;font-size:22px;padding:4px;
-  font-family:inherit}
-.cal-view-bar{display:flex;padding:8px 16px;gap:4px;overflow-x:auto;flex-shrink:0;background:var(--card);
-  border-bottom:.5px solid var(--sep)}
-.cal-vbtn{background:none;border:none;padding:6px 14px;border-radius:16px;font-size:13px;font-weight:500;
-  cursor:pointer;font-family:inherit;color:var(--sec);white-space:nowrap}
+.cal-hd{background:#fff;color:#3C4043;padding:6px 8px;display:flex;align-items:center;gap:4px;
+  flex-shrink:0;border-bottom:.5px solid #DADCE0}
+.cal-hd-title{font-size:20px;font-weight:400;color:#3C4043;flex:1;padding-left:6px;letter-spacing:-.2px}
+.cal-hd-title span{color:#70757A}
+.cal-icon-btn{background:none;border:none;color:#5F6368;cursor:pointer;width:36px;height:36px;
+  display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .1s;font-family:inherit}
+.cal-icon-btn:hover{background:rgba(95,99,104,.08)}
+.cal-icon-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.cal-today-btn{border:1px solid #DADCE0;background:none;border-radius:4px;padding:5px 12px;
+  font-size:13px;color:#3C4043;cursor:pointer;font-family:inherit;font-weight:500;letter-spacing:.1px;white-space:nowrap}
+.cal-today-btn:hover{background:#F8F9FA}
+.cal-view-bar{display:flex;padding:6px 12px;gap:2px;overflow-x:auto;flex-shrink:0;background:#fff;
+  border-bottom:.5px solid #DADCE0}
+.cal-vbtn{background:none;border:none;padding:5px 12px;border-radius:20px;font-size:13px;font-weight:500;
+  cursor:pointer;font-family:inherit;color:#5F6368;white-space:nowrap;letter-spacing:.1px}
 .cal-vbtn.on{background:rgba(26,115,232,.12);color:#1a73e8}
 
 /* Week strip */
-.week-strip{background:var(--card);padding:8px 0;border-bottom:.5px solid var(--sep);flex-shrink:0}
-.week-cols{display:grid;grid-template-columns:repeat(7,1fr);padding:0 8px}
+.week-strip{background:#fff;padding:6px 0 4px;border-bottom:.5px solid #DADCE0;flex-shrink:0}
+.week-cols{display:grid;grid-template-columns:52px repeat(7,1fr)}
 .week-col{display:flex;flex-direction:column;align-items:center;gap:3px}
-.week-dn{font-size:11px;color:var(--sec);text-transform:uppercase;font-weight:500}
+.week-dn{font-size:11px;color:#70757A;text-transform:uppercase;font-weight:500;letter-spacing:.5px}
 .week-dd{width:28px;height:28px;display:flex;align-items:center;justify-content:center;
-  border-radius:50%;font-size:14px;cursor:pointer}
-.week-dd.today{background:#EA4335;color:#fff;font-weight:700}
+  border-radius:50%;font-size:13px;cursor:pointer;color:#3C4043}
+.week-dd.today{background:#1a73e8;color:#fff;font-weight:500}
 .week-dd.sel{background:rgba(26,115,232,.2);color:#1a73e8}
 
 /* Week grid */
-.cal-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--card)}
+.cal-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#fff}
 .cal-grid{display:flex}
-.cal-times{width:50px;flex-shrink:0}
+.cal-times{width:52px;flex-shrink:0}
 .cal-tlabel{height:60px;display:flex;align-items:flex-start;justify-content:flex-end;
-  padding:4px 8px 0;font-size:10px;color:var(--sec);font-variant-numeric:tabular-nums}
+  padding:4px 8px 0;font-size:10px;color:#70757A;font-variant-numeric:tabular-nums}
 .cal-gcols{flex:1;display:grid;grid-template-columns:repeat(7,1fr);position:relative}
-.cal-dcol{border-left:.5px solid #F0F0F0;position:relative}
-.cal-hour{height:60px;border-top:.5px solid #F0F0F0}
+.cal-dcol{border-left:.5px solid #E8EAED;position:relative}
+.cal-hour{height:60px;border-top:.5px solid #E8EAED}
 .cal-evt{position:absolute;left:2px;right:2px;border-radius:4px;padding:2px 5px;
   font-size:11px;overflow:hidden;cursor:pointer;z-index:5}
 .cal-evt-t{font-weight:600;line-height:1.3;margin-bottom:1px}
 .cal-evt-s{font-size:10px;opacity:.85}
 .cal-now-line{position:absolute;left:0;right:0;height:2px;background:#EA4335;z-index:10;pointer-events:none}
 .cal-now-dot{position:absolute;left:-4px;top:-4px;width:10px;height:10px;border-radius:50%;background:#EA4335}
-.cal-fab{position:fixed;bottom:calc(58px + var(--sb));right:18px;width:56px;height:56px;border-radius:50%;
-  background:#EA4335;color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 4px 12px rgba(0,0,0,.25);cursor:pointer;border:none;z-index:50}
+.cal-fab{position:fixed;bottom:calc(58px + var(--sb));right:18px;width:56px;height:56px;border-radius:16px;
+  background:#fff;border:1px solid #DADCE0;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer;z-index:50}
+.cal-fab svg{width:24px;height:24px;stroke:#5F6368;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
 /* Month view */
 .cal-month{padding:0;overflow-y:auto}
 .month-grid{display:grid;grid-template-columns:repeat(7,1fr)}
-.month-dn{font-size:12px;color:var(--sec);text-align:center;padding:8px 0 4px;font-weight:500}
-.month-day{border-top:.5px solid var(--sep);padding:4px;min-height:72px;cursor:pointer}
-.month-day-num{font-size:14px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%;margin-bottom:2px}
-.month-day-num.today{background:#EA4335;color:#fff;font-weight:700}
-.month-day-num.other{color:var(--sec)}
-.month-evt{font-size:11px;background:#1a73e8;color:#fff;border-radius:2px;padding:1px 4px;margin-bottom:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.month-dn{font-size:11px;color:#70757A;text-align:center;padding:8px 0 4px;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+.month-day{border-top:.5px solid #E8EAED;padding:4px;min-height:72px;cursor:pointer}
+.month-day-num{font-size:13px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;margin-bottom:2px;color:#3C4043}
+.month-day-num.today{background:#1a73e8;color:#fff;font-weight:500}
+.month-day-num.other{color:#B0B0B0}
+.month-evt{font-size:11px;color:#fff;border-radius:3px;padding:1px 4px;margin-bottom:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* Schedule view */
-.sched-day{margin-bottom:16px}
-.sched-day-hd{font-size:15px;font-weight:600;color:var(--sec);padding:8px 16px;text-transform:uppercase;letter-spacing:.3px}
-.sched-evt{display:flex;gap:12px;padding:8px 16px;background:var(--card);border-bottom:.5px solid var(--sep)}
-.sched-dot{width:10px;height:10px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.sched-day{margin-bottom:12px}
+.sched-day-hd{font-size:12px;font-weight:500;color:#70757A;padding:8px 16px 4px;text-transform:uppercase;letter-spacing:.8px}
+.sched-evt{display:flex;gap:12px;padding:8px 16px;background:#fff;border-bottom:.5px solid #E8EAED}
+.sched-dot{width:11px;height:11px;border-radius:50%;margin-top:4px;flex-shrink:0}
 .sched-info{flex:1}
-.sched-title{font-size:15px;font-weight:500}
-.sched-time{font-size:13px;color:var(--sec)}
+.sched-title{font-size:14px;font-weight:400;color:#3C4043}
+.sched-time{font-size:12px;color:#70757A}
 
 /* Desktop calendar */
 @media(min-width:768px){
   .cal-d{display:flex;height:100%}
-  .cal-d-left{width:260px;border-right:1px solid var(--sep);padding:16px;overflow-y:auto;flex-shrink:0}
+  .cal-d-left{width:256px;border-right:1px solid #DADCE0;padding:16px;overflow-y:auto;flex-shrink:0;background:#fff}
   .cal-d-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-  .cal-d-topbar{display:flex;align-items:center;padding:12px 20px;border-bottom:1px solid var(--sep);gap:16px;flex-shrink:0}
-  .cal-d-title{font-size:22px;font-weight:400;color:#3C4043;flex:1}
+  .cal-d-topbar{display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid #DADCE0;gap:8px;flex-shrink:0;background:#fff}
+  .cal-d-title{font-size:22px;font-weight:400;color:#3C4043;flex:1;letter-spacing:-.3px}
   .cal-mini{margin-top:16px}
   .cal-mini-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
   .cal-mini-title{font-size:14px;font-weight:600}
@@ -688,16 +727,16 @@ function mobileShell(){
       ${tabIcon('recap')}<span>Recap</span>
     </div>
   </nav>
-  <button class="fab-settings" onclick="openSettings()" title="Paramètres">⚙️</button>
+  <button class="fab-settings" onclick="openSettings()" title="Paramètres"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
 </div>`;
 }
 
 function tabIcon(t){
   const icons={
-    frame:`<svg viewBox="0 0 24 24"><path d="M9 2h6l2 2H7L9 2zm-6 4h18v16H3V6zm2 2v12h14V8H5zm2 3h10v1H7zm0 3h10v1H7zm0 3h7v1H7z"/></svg>`,
-    log:`<svg viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm2 2v14h14V5H5zm2 3h10v1H7zm0 3h10v1H7zm0 3h6v1H7z"/></svg>`,
-    calendar:`<svg viewBox="0 0 24 24"><path d="M17 2v2H7V2H5v2H3v18h18V4h-2V2h-2zM5 10h14v10H5V10zm0-4h14v2H5V6zM8 4V2h8v2H8z"/></svg>`,
-    recap:`<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>`
+    frame:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
+    log:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+    calendar:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+    recap:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`
   };
   return icons[t]||'';
 }
@@ -721,7 +760,7 @@ function desktopShell(){
     <div class="side-sp"></div>
     <div class="side-div"></div>
     <div class="side-item${A.tab==='settings'?' on':''}" id="si-settings" onclick="switchTab('settings')">
-      <span class="side-icon">⚙️</span>Paramètres
+      <span class="side-icon">${sideIcon('settings')}</span>Paramètres
     </div>
     <div style="height:12px"></div>
   </nav>
@@ -736,7 +775,14 @@ function desktopShell(){
 }
 
 function sideIcon(t){
-  return{frame:'📓',log:'📝',calendar:'📅',recap:'🧠',settings:'⚙️'}[t]||'●';
+  const icons={
+    frame:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
+    log:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+    calendar:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+    recap:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+    settings:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`
+  };
+  return icons[t]||'';
 }
 
 function setupDesktop(){switchTab(A.tab,true);}
@@ -892,7 +938,7 @@ function renderFrameDesktop(){
     </div>`).join('')}
   </div>
   <div class="nd-content" id="nd-content">
-    ${n?renderNoteBody(n):'<div class="empty"><div class="empty-ico">📝</div><div class="empty-txt">Sélectionnez une note</div></div>'}
+    ${n?(n.type==='text'?renderNoteBody(n):`<div style="padding:28px 36px;flex:1">${renderNoteBody(n)}</div>`):'<div class="empty" style="flex:1"><div class="empty-ico" style="font-size:48px">&#128221;</div><div class="empty-txt">Sélectionnez une note</div></div>'}
   </div>
 </div>`;
 }
@@ -902,30 +948,40 @@ window.selectDesktopNote=function(id){
   document.querySelectorAll('.notes-item').forEach(el=>{el.style.background='';});
   const item=document.getElementById(`nd-item-${id}`);if(item)item.style.background='#F0F5FF';
   const content=document.getElementById('nd-content');
-  if(content){const n=Frame.note(id);content.innerHTML=n?renderNoteBody(n):'';
+  if(content){
+    const n=Frame.note(id);
+    if(n&&n.type==='text'){
+      // RTE handles its own layout — no outer padding wrapper
+      content.style.padding='0';content.style.overflow='hidden';content.style.display='flex';content.style.flexDirection='column';
+      content.innerHTML=renderNoteBody(n);
+    }else{
+      content.style.padding='';content.style.overflow='';content.style.display='';content.style.flexDirection='';
+      content.innerHTML=n?`<div style="padding:28px 36px">${renderNoteBody(n)}</div>`:'';
+    }
     setTimeout(()=>bindNoteEvents(id),50);}
 };
 
 function renderNoteContent(id){
   const n=Frame.note(id);if(!n)return'';
+  // text type uses RTE which handles its own layout
+  if(n.type==='text')return renderNoteBody(n);
   return`<div class="note-body" style="min-height:100vh">${renderNoteBody(n)}</div>`;}
 
 function renderNoteBody(n){
-  let body='';
-  switch(n.type){
-    case 'checklist':body=renderChecklist(n,false);break;
-    case 'routine':body=renderRoutineNote(n);break;
-    case 'text':body=renderTextNote(n);break;
-    case 'sport':body=renderSportNote(n);break;
-    case 'analysis':body=renderAnalysisNote(n);break;
-    case 'personnalites':body=renderPersonnalitesNote(n);break;
-    default:body='<p>Type inconnu</p>';}
-  return `
-<textarea class="note-big-title" id="note-title-${n.id}"
+  const titleHtml=`<textarea class="note-big-title" id="note-title-${n.id}"
   onchange="updateNoteTitle('${n.id}',this.value)" rows="1"
   oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'">${esc(n.title)}</textarea>
-<div class="note-divider"></div>
-${body}`;}
+<div class="note-divider"></div>`;
+  switch(n.type){
+    case 'text': return `<div style="padding:16px 16px 0;background:var(--card)">${titleHtml}</div>`+renderRichTextNote(n);
+    case 'checklist': return titleHtml+renderChecklist(n,false);
+    case 'routine': return titleHtml+renderRoutineNote(n);
+    case 'sport': return titleHtml+renderSportNote(n);
+    case 'analysis': return titleHtml+renderAnalysisNote(n);
+    case 'personnalites': return titleHtml+renderPersonnalitesNote(n);
+    default: return titleHtml+'<p>Type inconnu</p>';
+  }
+}
 
 function renderChecklist(n,isRoutine=false){
   const items=n.items||[];
@@ -977,6 +1033,56 @@ function renderTextNote(n){
     <span class="add-circle">＋</span><span>Nouvelle ligne</span>
   </button>
 </div>`;}
+
+function renderRichTextNote(n){
+  // Migrate old lines[] to HTML on first use
+  let html=n.html;
+  if(!html&&n.lines&&n.lines.length){
+    html=n.lines.map(l=>`<p>${esc(l)||'<br>'}</p>`).join('');
+    Frame.update(n.id,note=>{note.html=html;});
+  }
+  if(!html)html='<p><br></p>';
+  return`<div class="rte-wrap">
+  <div class="rte-body" id="rte-${n.id}" contenteditable="true"
+    oninput="deb('rte-${n.id}',()=>saveRTE('${n.id}',document.getElementById('rte-${n.id}').innerHTML),600)"
+    onkeydown="rteKeydown(event)">${html}</div>
+  <div class="rte-toolbar">
+    <button class="rtb rtb-b" onmousedown="event.preventDefault();fmt('bold')" title="Gras">B</button>
+    <button class="rtb rtb-i" onmousedown="event.preventDefault();fmt('italic')" title="Italique">I</button>
+    <button class="rtb rtb-u" onmousedown="event.preventDefault();fmt('underline')" title="Souligné">U</button>
+    <div class="rte-sep"></div>
+    <button class="rtb" onmousedown="event.preventDefault();fmt('formatBlock','h1')" title="Titre" style="font-size:13px;font-weight:700">T1</button>
+    <button class="rtb" onmousedown="event.preventDefault();fmt('formatBlock','h2')" title="Sous-titre" style="font-size:13px;font-weight:600">T2</button>
+    <button class="rtb" onmousedown="event.preventDefault();fmt('formatBlock','p')" title="Normal" style="font-size:13px">¶</button>
+    <div class="rte-sep"></div>
+    <button class="rtb" onmousedown="event.preventDefault();fmt('insertUnorderedList')" title="Liste à puces"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+    <button class="rtb" onmousedown="event.preventDefault();fmt('insertOrderedList')" title="Liste numérotée"><svg viewBox="0 0 24 24"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></button>
+    <div class="rte-sep"></div>
+    <button class="rtb" onmousedown="event.preventDefault();insertRteCheckbox()" title="Case à cocher"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></button>
+    <button class="rtb" onmousedown="event.preventDefault();insertRteTable()" title="Tableau"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg></button>
+    <div class="rte-sep"></div>
+    <button class="rtb" onmousedown="event.preventDefault();fmt('removeFormat')" title="Effacer formatage" style="font-size:13px;color:var(--sec)"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
+  </div>
+</div>`;}
+
+window.saveRTE=function(noteId,html){
+  Frame.update(noteId,n=>{n.html=html;});};
+
+window.fmt=function(cmd,val){
+  document.execCommand(cmd,false,val||null);};
+
+window.rteKeydown=function(e){
+  if(e.key==='Tab'){e.preventDefault();document.execCommand('insertHTML',false,'&nbsp;&nbsp;&nbsp;&nbsp;');}};
+
+window.insertRteTable=function(){
+  document.execCommand('insertHTML',false,
+    '<table><tr><th contenteditable="true">Col 1</th><th contenteditable="true">Col 2</th><th contenteditable="true">Col 3</th></tr><tr><td contenteditable="true">&nbsp;</td><td contenteditable="true">&nbsp;</td><td contenteditable="true">&nbsp;</td></tr><tr><td contenteditable="true">&nbsp;</td><td contenteditable="true">&nbsp;</td><td contenteditable="true">&nbsp;</td></tr></table><p><br></p>');};
+
+window.insertRteCheckbox=function(){
+  document.execCommand('insertHTML',false,
+    '<div><input type="checkbox" onchange="this.nextSibling.style.textDecoration=this.checked?\'line-through\':\'\'"> <span>Nouvel élément</span></div>');
+  // Place cursor after the span
+};
 
 function renderSportNote(n){
   return`
@@ -1134,13 +1240,24 @@ function renderCalendar(){
 function renderCalConnect(){
   return`
 <div class="cal-connect">
-  <div class="cal-connect-icon">📅</div>
+  <div class="cal-connect-logo">
+    <svg width="68" height="68" viewBox="0 0 68 68" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="68" height="68" rx="14" fill="#fff" stroke="#DADCE0" stroke-width="1.5"/>
+      <rect x="18" y="22" width="32" height="28" rx="2" fill="#fff" stroke="#DADCE0" stroke-width="1.5"/>
+      <rect x="18" y="22" width="32" height="10" rx="2" fill="#1a73e8" opacity=".08"/>
+      <line x1="18" y1="32" x2="50" y2="32" stroke="#DADCE0" stroke-width="1.5"/>
+      <line x1="28" y1="19" x2="28" y2="25" stroke="#EA4335" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="40" y1="19" x2="40" y2="25" stroke="#EA4335" stroke-width="2.5" stroke-linecap="round"/>
+      <text x="34" y="47" text-anchor="middle" font-size="13" font-family="-apple-system,sans-serif" font-weight="600" fill="#1a73e8">14</text>
+    </svg>
+  </div>
   <div class="cal-connect-title">Google Agenda</div>
   <div class="cal-connect-sub">Connectez votre Google Agenda pour afficher et synchroniser vos événements.</div>
   <button class="g-btn" onclick="Cal.startOAuth()">
-    <span class="g-logo">🔵</span>Se connecter avec Google
+    <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.5 2.6 13.4l7.8 6.1C12.3 13.4 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.7 24.5c0-1.6-.1-3.2-.4-4.7H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4 7.3-10 7.3-17.3z"/><path fill="#FBBC05" d="M10.4 28.5c-.5-1.5-.8-3.2-.8-4.9s.3-3.4.8-4.9L2.6 12.6C.9 16.1 0 19.9 0 24s.9 7.9 2.6 11.4l7.8-6.9z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.2-8.4 2.2-6.3 0-11.7-4.3-13.6-10.1L2.6 34.6C6.6 43 14.6 48 24 48z"/></svg>
+    Se connecter avec Google
   </button>
-  <div style="font-size:13px;color:var(--sec);text-align:center;max-width:280px">
+  <div style="font-size:13px;color:#5F6368;text-align:center;max-width:280px">
     Configurez votre OAuth Client ID dans les Paramètres avant de vous connecter.
   </div>
 </div>`;}
@@ -1151,13 +1268,15 @@ function renderCalMain(){
 
 function renderCalMobile(){
   const d=A.calDate;const wdates=D.weekDates(d);const today=new Date();
+  const mv=D.frenchMonthYear(d).split(' ');
   return`
-<div style="display:flex;flex-direction:column;height:100%">
+<div style="display:flex;flex-direction:column;height:100%;background:#fff">
   <div class="cal-hd">
-    <button class="cal-icon-btn" onclick="calNavWeek(-1)">‹</button>
-    <div class="cal-hd-title">${D.frenchMonthYear(d)}</div>
-    <button class="cal-icon-btn" onclick="calNavWeek(1)">›</button>
-    <button class="cal-icon-btn" onclick="calSync()" title="Sync">↻</button>
+    <button class="cal-today-btn" onclick="calGoToday()">Aujourd'hui</button>
+    <div class="cal-hd-title">${mv[0]} <span>${mv[1]||''}</span></div>
+    <button class="cal-icon-btn" onclick="calNavWeek(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <button class="cal-icon-btn" onclick="calNavWeek(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+    <button class="cal-icon-btn" onclick="calSync()" title="Sync"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.5 9a9 9 0 0 1 14.8-3.5L23 10M1 14l4.7 4.5A9 9 0 0 0 20.5 15"/></svg></button>
   </div>
   <div class="cal-view-bar">
     ${['day','week','month','schedule'].map(v=>`
@@ -1170,7 +1289,7 @@ function renderCalMobile(){
       ${renderCalView()}
     </div>
   </div>
-  <button class="cal-fab" onclick="alert('Ouvrez Google Calendar pour créer un événement.')">＋</button>
+  <button class="cal-fab" onclick="alert('Ouvrez Google Calendar pour créer un événement.')"><svg viewBox="0 0 24 24" fill="none" stroke="#5F6368" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
 </div>`;}
 
 function renderCalDesktop(){
@@ -1201,15 +1320,15 @@ function renderCalDesktop(){
   </div>
   <div class="cal-d-main">
     <div class="cal-d-topbar">
-      <button class="btn btn-gray" onclick="calGoToday()">Aujourd'hui</button>
-      <button style="background:none;border:none;cursor:pointer;font-size:18px" onclick="calNavWeek(-1)">‹</button>
-      <button style="background:none;border:none;cursor:pointer;font-size:18px" onclick="calNavWeek(1)">›</button>
+      <button class="cal-today-btn" onclick="calGoToday()">Aujourd'hui</button>
+      <button class="cal-icon-btn" onclick="calNavWeek(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <button class="cal-icon-btn" onclick="calNavWeek(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
       <div class="cal-d-title" id="cal-d-title">${D.frenchMonthYear(d)}</div>
-      <div style="display:flex;gap:4px">
+      <div style="display:flex;gap:2px">
         ${['day','week','month','schedule'].map(v=>`
         <button class="cal-vbtn${A.calView===v?' on':''}" onclick="calSetView('${v}')">${{day:'Jour',week:'Semaine',month:'Mois',schedule:'Planning'}[v]}</button>`).join('')}
       </div>
-      <button class="btn btn-gray" onclick="calSync()" style="font-size:13px;padding:5px 10px">↻ Sync</button>
+      <button class="cal-icon-btn" onclick="calSync()" title="Sync"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.5 9a9 9 0 0 1 14.8-3.5L23 10M1 14l4.7 4.5A9 9 0 0 0 20.5 15"/></svg></button>
     </div>
     <div id="cal-body" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
       ${renderCalView()}
@@ -1232,6 +1351,7 @@ function renderCalWeek(){
   return`
 <div class="week-strip">
   <div class="week-cols">
+    <div></div>
     ${wdates.map((d,i)=>`
     <div class="week-col">
       <div class="week-dn">${dayNames[i]}</div>
@@ -1499,7 +1619,7 @@ function renderSettings(){
     <input class="set-inp" type="password" placeholder="sk-ant-..." value="${esc(anthKey)}"
       onchange="S.set('anthropic_key',this.value)" autocomplete="off">
     <div class="set-row" style="border-top:.5px solid var(--sep)">
-      <span class="set-row-icon">🤖</span>
+      <span class="set-row-icon" style="background:#6E5DA8;border-radius:7px;width:29px;height:29px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/><circle cx="9" cy="14" r="1"/><circle cx="15" cy="14" r="1"/></svg></span>
       <span class="set-row-lbl">Modèle: claude-sonnet-4-6</span>
     </div>
   </div>
@@ -1508,7 +1628,7 @@ function renderSettings(){
     <input class="set-inp" type="text" placeholder="xxx.apps.googleusercontent.com" value="${esc(gid)}"
       onchange="S.set('google_client_id',this.value)" autocomplete="off">
     <div class="set-row" style="border-top:.5px solid var(--sep);cursor:pointer" onclick="settingsCalAction()">
-      <span class="set-row-icon">${calConnected?'✅':'🔗'}</span>
+      <span class="set-row-icon" style="background:#1a73e8;border-radius:7px;width:29px;height:29px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 48 48"><path fill="#fff" d="M34 6H14v10l10 4 10-4V6z"/><path fill="rgba(255,255,255,0.7)" d="M14 16v26h20V16l-10 4-10-4z"/><rect x="14" y="6" width="20" height="4" rx="1" fill="rgba(255,255,255,0.5)"/></svg></span>
       <span class="set-row-lbl">${calConnected?'Google Calendar connecté — Déconnecter':'Connecter Google Calendar'}</span>
       <div class="chevron"></div>
     </div>
@@ -1516,18 +1636,18 @@ function renderSettings(){
   <div class="set-hd">Données</div>
   <div class="set-grp">
     <div class="set-row" onclick="exportData()">
-      <span class="set-row-icon">📤</span>
+      <span class="set-row-icon" style="background:#34C759;border-radius:7px;width:29px;height:29px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>
       <span class="set-row-lbl">Exporter toutes mes données</span>
       <div class="chevron"></div>
     </div>
     <div class="set-row" onclick="document.getElementById('import-file').click()">
-      <span class="set-row-icon">📥</span>
+      <span class="set-row-icon" style="background:#007AFF;border-radius:7px;width:29px;height:29px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
       <span class="set-row-lbl">Importer des données</span>
       <div class="chevron"></div>
     </div>
     <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(this)">
     <div class="set-row" onclick="confirmReset()">
-      <span class="set-row-icon">🗑️</span>
+      <span class="set-row-icon" style="background:#FF3B30;border-radius:7px;width:29px;height:29px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></span>
       <span class="set-row-lbl" style="color:var(--red)">Réinitialiser toutes les données</span>
     </div>
   </div>
