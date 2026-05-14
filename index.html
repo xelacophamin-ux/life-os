@@ -19,7 +19,7 @@
   --sl: env(safe-area-inset-left,0px); --sr: env(safe-area-inset-right,0px);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;background:#fff;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',Helvetica,sans-serif}
+html,body{height:100%;height:-webkit-fill-available;overflow:hidden;background:#F2F2F7;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',Helvetica,sans-serif}
 #app{height:100%;width:100%;position:relative}
 
 /* ── MOBILE SHELL ── */
@@ -43,7 +43,7 @@ html,body{height:100%;overflow:hidden;background:#fff;font-family:-apple-system,
 .screen.slide-in.active{transform:translateX(0);transition:transform .3s ease}
 .tab-bar{position:fixed;bottom:0;left:0;right:0;
   height:49px;padding-bottom:0;
-  background:#fff;
+  background:rgba(255,255,255,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   border-top:.5px solid var(--sep);display:flex;align-items:stretch;z-index:200}
 .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   cursor:pointer;padding:6px 0;color:var(--sec);font-size:10px;font-weight:500;position:relative}
@@ -53,6 +53,15 @@ html,body{height:100%;overflow:hidden;background:#fff;font-family:-apple-system,
 .fab-settings{position:fixed;top:7px;right:16px;z-index:210;background:none;
   border:none;cursor:pointer;color:var(--blue);width:30px;height:30px;
   display:flex;align-items:center;justify-content:center}
+.a2hs-banner{position:fixed;left:8px;right:8px;bottom:57px;z-index:300;
+  background:rgba(0,0,0,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  color:#fff;padding:12px 14px;border-radius:14px;display:none;
+  font-size:13px;line-height:1.4;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.a2hs-banner.show{display:flex;align-items:center;gap:10px}
+.a2hs-banner-text{flex:1}
+.a2hs-banner-text b{font-weight:600}
+.a2hs-banner-close{background:none;border:none;color:#fff;opacity:.6;font-size:18px;
+  cursor:pointer;padding:0 4px;line-height:1}
 /* PWA standalone (home screen icon): full safe-area support top + bottom */
 @media(display-mode:standalone){
   .nav{height:calc(44px + env(safe-area-inset-top,0px));padding-top:env(safe-area-inset-top,0px)}
@@ -758,6 +767,10 @@ function mobileShell(){
     </div>
   </nav>
   <button class="fab-settings" onclick="openSettings()" title="Paramètres"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+  <div class="a2hs-banner" id="a2hs-banner">
+    <div class="a2hs-banner-text"><b>Ajouter à l'écran d'accueil</b> pour enlever la barre Safari en bas. Partage <svg style="display:inline;vertical-align:-3px" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> → « Sur l'écran d'accueil »</div>
+    <button class="a2hs-banner-close" onclick="dismissA2HS()">✕</button>
+  </div>
   <div class="rte-kb-toolbar" id="rte-kb-toolbar">
     <button class="rtb rtb-b" onmousedown="event.preventDefault();fmt('bold')"><b>B</b></button>
     <button class="rtb rtb-i" onmousedown="event.preventDefault();fmt('italic')"><i>I</i></button>
@@ -1147,6 +1160,11 @@ window.rteUpdatePos=function(){
     const tabH=document.querySelector('.tab-bar')?.offsetHeight||49;
     bar.style.bottom=Math.max(kbH,tabH)+'px';
   }
+};
+window.dismissA2HS=function(){
+  S.set('a2hs_dismissed','1');
+  const b=document.getElementById('a2hs-banner');
+  if(b)b.classList.remove('show');
 };
 window.editNoteIcon=function(id){
   const n=Frame.note(id);if(!n)return;
@@ -1895,8 +1913,17 @@ function checkMidnight(){
 // ══════════════════════════════════════════════════════════════
 function init(){
   // Detect iOS standalone PWA mode (more reliable than @media display-mode)
-  if(window.navigator.standalone===true){
+  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+  const isStandalone=window.navigator.standalone===true||window.matchMedia('(display-mode: standalone)').matches;
+  if(isStandalone){
     document.documentElement.classList.add('ios-standalone');
+  }
+  // Suggest Add to Home Screen on iOS Safari only (where browser chrome is visible)
+  if(isIOS&&!isStandalone&&!S.get('a2hs_dismissed')){
+    setTimeout(()=>{
+      const b=document.getElementById('a2hs-banner');
+      if(b)b.classList.add('show');
+    },1500);
   }
   checkOAuthCallback();
   checkMidnight();
