@@ -19,7 +19,7 @@
   --sl: env(safe-area-inset-left,0px); --sr: env(safe-area-inset-right,0px);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',Helvetica,sans-serif}
+html,body{height:100%;overflow:hidden;background:#fff;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',Helvetica,sans-serif}
 #app{height:100%;width:100%;position:relative}
 
 /* ── MOBILE SHELL ── */
@@ -1746,23 +1746,55 @@ function checkOAuthCallback(){
   if(!h)return;
   const p=new URLSearchParams(h);
 
-  // Silent auth error — interaction required from user
   const err=p.get('error');
   if(err){
     history.replaceState({},'',location.pathname);
     if(err==='interaction_required'||err==='login_required'||err==='consent_required'){
-      S.set('oauth_silent_failed','1'); // stop retrying silently
+      S.set('oauth_silent_failed_at',String(Date.now()));
     }
     return;
   }
 
   if(Cal.handleCallback()){
-    S.del('oauth_silent_failed'); // success — clear failure flag
+    S.del('oauth_silent_failed_at');
     A.tab='calendar';
     const wdates=D.weekDates(new Date());
     Cal.fetchRange(wdates[0],D.addDays(wdates[6],1)).then(()=>{
       if(A.mobile())renderMainScreen();else switchTab('calendar',true);});
   }
+}
+
+// Silent token refresh via hidden iframe (no page reload)
+function silentOAuthRefresh(){
+  if(!Cal.clientId())return;
+  const scope='https://www.googleapis.com/auth/calendar.readonly';
+  const redir=(location.origin+location.pathname).replace(/\/$/,'');
+  const url=`https://accounts.google.com/o/oauth2/v2/auth`+
+    `?client_id=${encodeURIComponent(Cal.clientId())}`+
+    `&redirect_uri=${encodeURIComponent(redir)}`+
+    `&response_type=token&scope=${encodeURIComponent(scope)}&prompt=none`;
+  const iframe=document.createElement('iframe');
+  iframe.style.cssText='display:none;position:fixed;width:0;height:0;top:-200px;left:-200px';
+  document.body.appendChild(iframe);
+  let done=false;
+  const cleanup=()=>{try{document.body.removeChild(iframe);}catch(e){}};
+  const check=setInterval(()=>{
+    try{
+      const loc=iframe.contentWindow.location;
+      if(loc.origin===location.origin){
+        done=true;clearInterval(check);cleanup();
+        const hp=new URLSearchParams(loc.hash.substring(1));
+        const t=hp.get('access_token');const exp=hp.get('expires_in');const er=hp.get('error');
+        if(t){
+          S.set('google_token',t);
+          S.set('google_token_expiry',String(Date.now()+parseInt(exp||'3600')*1000));
+          S.del('oauth_silent_failed_at');
+        } else if(er){S.set('oauth_silent_failed_at',String(Date.now()));}
+      }
+    }catch(e){/* cross-origin, still on Google */}
+  },300);
+  setTimeout(()=>{if(!done){clearInterval(check);cleanup();}},15000);
+  iframe.src=url;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1783,8 +1815,10 @@ function init(){
   checkOAuthCallback();
   checkMidnight();
 
-  // Auto silent reconnect: if token expired and we have a client ID, try prompt=none
-  if(Cal.clientId()&&!Cal.valid()&&!S.get('oauth_silent_failed')){
+  // Auto silent reconnect on startup: redirect if token expired and no recent failure
+  const silentFailedAt=parseInt(S.get('oauth_silent_failed_at')||'0');
+  const recentlyFailed=silentFailedAt&&(Date.now()-silentFailedAt)<30*60*1000;
+  if(Cal.clientId()&&!Cal.valid()&&!recentlyFailed){
     const scope='https://www.googleapis.com/auth/calendar.readonly';
     const redir=(location.origin+location.pathname).replace(/\/$/,'');
     window.location.href=`https://accounts.google.com/o/oauth2/v2/auth`+
@@ -1793,16 +1827,24 @@ function init(){
       `&response_type=token`+
       `&scope=${encodeURIComponent(scope)}`+
       `&prompt=none`;
-    return; // will redirect back and re-run init
+    return;
   }
 
   render();
 
-  // Auto-sync calendar events on startup (keeps data fresh across devices)
+  // Auto-sync calendar events on startup
   if(Cal.valid()){
     const wdates=D.weekDates(new Date());
     Cal.fetchRange(wdates[0],D.addDays(wdates[6],1)).catch(()=>{});
   }
+
+  // Proactive token refresh: check every 5 min, refresh if <10 min left
+  setInterval(()=>{
+    const exp=Cal.expiry();
+    if(Cal.clientId()&&exp&&(exp-Date.now())<10*60*1000){
+      silentOAuthRefresh();
+    }
+  },5*60*1000);
 
   // Handle resize
   let lastMobile=window.innerWidth<768;
