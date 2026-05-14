@@ -1497,8 +1497,18 @@ async function renderWeekEvents(){
 window.calNavWeek=function(dir){
   if(A.calView==='month')A.calDate=D.addMonths(A.calDate,dir);
   else A.calDate=D.addDays(A.calDate,dir*7);
-  refreshCalSection();};
-window.calGoToday=function(){A.calDate=new Date();refreshCalSection();};
+  refreshCalSection();
+  if(Cal.valid()){
+    const wdates=D.weekDates(A.calDate);
+    Cal.fetchRange(wdates[0],D.addDays(wdates[6],1)).then(()=>refreshCalSection()).catch(()=>{});
+  }};
+window.calGoToday=function(){
+  A.calDate=new Date();
+  refreshCalSection();
+  if(Cal.valid()){
+    const wdates=D.weekDates(A.calDate);
+    Cal.fetchRange(wdates[0],D.addDays(wdates[6],1)).then(()=>refreshCalSection()).catch(()=>{});
+  }};
 window.calSetView=function(v){A.calView=v;refreshCalSection();};
 window.calMiniNav=function(dir){
   A.calMiniDate=D.addMonths(A.calMiniDate,dir);
