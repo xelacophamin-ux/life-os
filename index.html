@@ -449,6 +449,12 @@ html.ios-standalone .rte-kb-toolbar{bottom:calc(49px + env(safe-area-inset-botto
   outline:none;padding:11px 16px;color:var(--text)}
 .set-inp::placeholder{color:var(--sep)}
 .set-inp-lbl{font-size:13px;color:var(--sec);padding:8px 16px 2px;display:block}
+.set-textarea{width:100%;min-height:140px;max-height:300px;border:none;background:transparent;
+  font-size:14px;font-family:inherit;outline:none;padding:11px 16px;color:var(--text);
+  resize:vertical;line-height:1.5}
+.set-textarea::placeholder{color:var(--sep)}
+.set-helper{font-size:12px;color:var(--sec);padding:6px 16px 10px;line-height:1.4}
+.set-helper a{color:var(--blue);text-decoration:none}
 .set-info-row{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;
   min-height:40px}
 .set-info-row+.set-info-row::before{content:'';position:absolute;top:0;left:16px;right:0;height:.5px;background:var(--sep)}
@@ -1166,6 +1172,14 @@ window.dismissA2HS=function(){
   const b=document.getElementById('a2hs-banner');
   if(b)b.classList.remove('show');
 };
+window.claudeMemHelp=function(){
+  alert('Exporter ta mémoire Claude :\n\n1. Va sur claude.ai\n2. Ouvre Settings (en bas à gauche)\n3. Profile → "What should Claude know about you"\n4. Copie tout le texte\n5. Reviens ici et colle dans le champ ci-dessus\n\nTu peux aussi ajouter tout contexte utile : objectifs, principes, projets en cours, etc.');
+};
+window.claudeMemClear=function(){
+  if(!confirm('Effacer la mémoire Claude ?'))return;
+  S.del('claude_memory');
+  refreshSettingsSection();
+};
 window.editNoteIcon=function(id){
   const n=Frame.note(id);if(!n)return;
   const cur=n.icon||'📝';
@@ -1727,6 +1741,8 @@ function renderSettings(){
   const anthKey=S.get('anthropic_key','')||'';const gid=S.get('google_client_id','')||'';
   const lastSync=S.get('last_cal_sync',null);const storageMB=(S.bytes()/1024/1024).toFixed(2);
   const calConnected=Cal.valid();
+  const claudeMem=S.get('claude_memory','')||'';
+  const memChars=claudeMem.length;
   return`
 <div class="set-body">
   <div class="set-hd">Clés API</div>
@@ -1737,6 +1753,25 @@ function renderSettings(){
     <div class="set-row" style="border-top:.5px solid var(--sep)">
       <span class="set-row-icon" style="background:#6E5DA8;border-radius:7px;width:29px;height:29px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/><circle cx="9" cy="14" r="1"/><circle cx="15" cy="14" r="1"/></svg></span>
       <span class="set-row-lbl">Modèle: claude-sonnet-4-6</span>
+    </div>
+  </div>
+  <div class="set-hd">Mémoire Claude</div>
+  <div class="set-grp">
+    <label class="set-inp-lbl">Contexte personnel (envoyé à Claude pour chaque recap)</label>
+    <textarea class="set-textarea" id="claude-memory-input" placeholder="Colle ici la mémoire de ton compte Claude.&#10;&#10;Tu peux l'exporter depuis claude.ai → Settings → Profile → 'Memory' / 'What Claude should know about you'.&#10;&#10;Plus elle est complète, plus les recaps seront pertinents."
+      oninput="deb('claude-mem',()=>{S.set('claude_memory',this.value);document.getElementById('claude-mem-count').textContent=this.value.length+' caractères'},500)">${esc(claudeMem)}</textarea>
+    <div class="set-helper">
+      <span id="claude-mem-count">${memChars} caractères</span>
+      ${memChars>0?` · <span style="color:var(--green)">✓ Active</span>`:` · <span style="color:var(--sec)">Vide</span>`}
+    </div>
+    <div class="set-row" style="border-top:.5px solid var(--sep);cursor:pointer" onclick="claudeMemHelp()">
+      <span class="set-row-icon" style="background:#FF9500;border-radius:7px;width:29px;height:29px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+      <span class="set-row-lbl">Comment exporter ma mémoire ?</span>
+      <div class="chevron"></div>
+    </div>
+    <div class="set-row" style="border-top:.5px solid var(--sep);cursor:pointer" onclick="claudeMemClear()">
+      <span class="set-row-icon" style="background:#8E8E93;border-radius:7px;width:29px;height:29px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></span>
+      <span class="set-row-lbl">Effacer la mémoire</span>
     </div>
   </div>
   <div class="set-grp">
