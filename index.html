@@ -263,6 +263,25 @@ html.ios-standalone .rte-kb-toolbar{bottom:calc(58px + env(safe-area-inset-botto
   font-weight:600;color:var(--sec);text-align:left}
 .sport-tbl td{padding:7px 10px;border:1px solid var(--sep);color:var(--text)}
 .tbl-sub{font-size:15px;font-weight:700;color:var(--text);margin:14px 0 6px}
+.tbl-input{width:100%;border:none;background:transparent;outline:none;resize:none;font-family:inherit;
+  font-size:15px;color:var(--text);line-height:1.5;padding:0;min-height:22px}
+.row-del{background:none;border:none;color:var(--sep);font-size:18px;cursor:pointer;padding:2px 8px;
+  -webkit-tap-highlight-color:transparent;line-height:1;flex-shrink:0;opacity:.6;transition:opacity .15s}
+.row-del:active{opacity:1;color:var(--red)}
+.row-del-tbl{padding:0;width:32px;font-size:16px}
+.ana-row{display:flex;align-items:flex-start;gap:8px;padding:3px 0;position:relative}
+.ana-bullet{color:var(--sec);font-size:18px;line-height:1.4;padding-top:2px;flex-shrink:0;width:14px;text-align:center}
+.ana-input{flex:1;border:none;background:transparent;outline:none;resize:none;font-family:inherit;
+  font-size:16px;color:var(--text);line-height:1.5;padding:2px 0;min-height:24px}
+.pers-block{margin-bottom:18px}
+.pers-name-row{display:flex;align-items:flex-start;gap:8px;padding:6px 0;margin-bottom:4px}
+.pers-name-input{flex:1;border:none;background:transparent;outline:none;resize:none;font-family:inherit;
+  font-size:19px;font-weight:700;color:var(--text);line-height:1.3;padding:0;min-height:26px;letter-spacing:-.2px}
+.pers-trait-row{display:flex;align-items:flex-start;gap:6px;padding:3px 0 3px 8px;position:relative}
+.pers-trait-bullet{color:var(--sec);font-size:16px;line-height:1.5;padding-top:2px;flex-shrink:0}
+.pers-trait-input{flex:1;border:none;background:transparent;outline:none;resize:none;font-family:inherit;
+  font-size:16px;color:var(--text);line-height:1.5;padding:2px 0;min-height:24px}
+.add-line-sub{padding-left:8px;color:var(--sec);font-size:14px}
 
 /* Personnalités */
 .pers-name{font-size:19px;font-weight:700;margin:8px 0 6px}
@@ -1138,10 +1157,16 @@ function renderRoutineNote(n){
   ${items.map(item=>{
     const check=checks.find(c=>c.id===item.id);const checked=check?.checked||false;
     return`
-  <div class="chk-item">
+  <div class="chk-item" id="ri-${item.id}">
     <div class="chk-circle${checked?' on':''}" onclick="toggleRoutine('${item.id}')"></div>
-    <span class="chk-text${checked?' on':''}" id="rt-${item.id}">${esc(item.text)}</span>
+    <textarea class="chk-text${checked?' on':''}" rows="1"
+      oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+      onchange="updateRoutineItemText('${n.id}','${item.id}',this.value)">${esc(item.text)}</textarea>
+    <button class="row-del" onclick="deleteRoutineItem('${n.id}','${item.id}')" title="Supprimer">✕</button>
   </div>`;}).join('')}
+  <button class="add-line" onclick="addRoutineItem('${n.id}')">
+    <span class="add-circle">＋</span><span>Nouvel élément</span>
+  </button>
 </div>`;}
 
 function renderTextNote(n){
@@ -1260,31 +1285,157 @@ window.insertRteCheckbox=function(){
 };
 
 function renderSportNote(n){
+  const zones=n.zones||[];const schedule=n.schedule||[];
+  const cell=(val,fn)=>`<textarea class="tbl-input" rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" onchange="${fn}">${esc(val)}</textarea>`;
   return`
 <div class="tbl-sub">Zones d'intensité</div>
 <table class="sport-tbl">
-  <tr><th>Zone</th><th>Volume</th></tr>
-  ${(n.zones||[]).map(z=>`<tr><td>${esc(z.z)}</td><td>${esc(z.v)}</td></tr>`).join('')}
+  <tr><th>Zone</th><th>Volume</th><th style="width:36px"></th></tr>
+  ${zones.map((z,i)=>`<tr>
+    <td>${cell(z.z,`updateSportZone('${n.id}',${i},'z',this.value)`)}</td>
+    <td>${cell(z.v,`updateSportZone('${n.id}',${i},'v',this.value)`)}</td>
+    <td><button class="row-del row-del-tbl" onclick="deleteSportZone('${n.id}',${i})">✕</button></td>
+  </tr>`).join('')}
 </table>
-<div class="tbl-sub" style="margin-top:16px">Planning hebdomadaire</div>
+<button class="add-line" onclick="addSportZone('${n.id}')">
+  <span class="add-circle">＋</span><span>Nouvelle zone</span>
+</button>
+<div class="tbl-sub" style="margin-top:20px">Planning hebdomadaire</div>
 <table class="sport-tbl">
-  <tr><th>Jour</th><th>Séance</th></tr>
-  ${(n.schedule||[]).map(s=>`<tr><td>${esc(s.day)}</td><td>${esc(s.act)}</td></tr>`).join('')}
-</table>`;}
+  <tr><th>Jour</th><th>Séance</th><th style="width:36px"></th></tr>
+  ${schedule.map((s,i)=>`<tr>
+    <td>${cell(s.day,`updateSportSchedule('${n.id}',${i},'day',this.value)`)}</td>
+    <td>${cell(s.act,`updateSportSchedule('${n.id}',${i},'act',this.value)`)}</td>
+    <td><button class="row-del row-del-tbl" onclick="deleteSportSchedule('${n.id}',${i})">✕</button></td>
+  </tr>`).join('')}
+</table>
+<button class="add-line" onclick="addSportSchedule('${n.id}')">
+  <span class="add-circle">＋</span><span>Nouveau jour</span>
+</button>`;}
 
 function renderAnalysisNote(n){
-  return`
-<div class="ana-hd">Rictus de stress défensif</div>
-${(n.rictus||[]).map(r=>`<div class="ana-item">${esc(r)}</div>`).join('')}
-<div class="ana-hd">Protocole SM</div>
-${(n.protocole||[]).map(p=>`<div class="ana-item">${esc(p)}</div>`).join('')}`;}
+  const sec=(label,arr,key)=>`
+<div class="ana-hd">${label}</div>
+${(arr||[]).map((it,i)=>`
+<div class="ana-row">
+  <span class="ana-bullet">•</span>
+  <textarea class="ana-input" rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" onchange="updateAnalysisItem('${n.id}','${key}',${i},this.value)">${esc(it)}</textarea>
+  <button class="row-del" onclick="deleteAnalysisItem('${n.id}','${key}',${i})">✕</button>
+</div>`).join('')}
+<button class="add-line" onclick="addAnalysisItem('${n.id}','${key}')">
+  <span class="add-circle">＋</span><span>Ajouter</span>
+</button>`;
+  return sec('Rictus de stress défensif',n.rictus,'rictus')+sec('Protocole SM',n.protocole,'protocole');
+}
 
 function renderPersonnalitesNote(n){
-  return(n.entries||[]).map(e=>`
-<div>
-  <div class="pers-name">${esc(e.name)}</div>
-  ${(e.traits||[]).map(t=>`<div class="pers-trait">${esc(t)}</div>`).join('')}
-</div>`).join('<div style="height:16px"></div>');}
+  const entries=n.entries||[];
+  return entries.map((e,ei)=>`
+<div class="pers-block">
+  <div class="pers-name-row">
+    <textarea class="pers-name-input" rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" onchange="updatePersonalityName('${n.id}',${ei},this.value)">${esc(e.name)}</textarea>
+    <button class="row-del" onclick="deletePersonality('${n.id}',${ei})" title="Supprimer cette personnalité">✕</button>
+  </div>
+  ${(e.traits||[]).map((t,ti)=>`
+  <div class="pers-trait-row">
+    <span class="pers-trait-bullet">—</span>
+    <textarea class="pers-trait-input" rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" onchange="updateTrait('${n.id}',${ei},${ti},this.value)">${esc(t)}</textarea>
+    <button class="row-del" onclick="deleteTrait('${n.id}',${ei},${ti})">✕</button>
+  </div>`).join('')}
+  <button class="add-line add-line-sub" onclick="addTrait('${n.id}',${ei})">
+    <span class="add-circle">＋</span><span style="font-size:14px">Ajouter un trait</span>
+  </button>
+</div>`).join('')+`
+<button class="add-line" onclick="addPersonality('${n.id}')" style="margin-top:18px">
+  <span class="add-circle">＋</span><span>Nouvelle personnalité</span>
+</button>`;}
+
+// Refresh note view (used by all add/delete handlers below)
+function refreshNoteView(id){
+  if(A.mobile()){
+    const sub=document.getElementById('screen-sub');
+    if(sub)sub.innerHTML=renderNoteContent(id);
+    setTimeout(()=>bindNoteEvents(id),50);
+  }else{
+    if(window.selectDesktopNote)selectDesktopNote(id);
+  }
+}
+
+// ── ROUTINE editing ────────────────────────────────────────────
+window.addRoutineItem=function(id){
+  const itemId=uid();
+  Frame.update(id,n=>{(n.items=n.items||[]).push({id:itemId,text:''});});
+  refreshNoteView(id);
+};
+window.deleteRoutineItem=function(id,itemId){
+  Frame.update(id,n=>{n.items=(n.items||[]).filter(i=>i.id!==itemId);});
+  refreshNoteView(id);
+};
+window.updateRoutineItemText=function(id,itemId,text){
+  Frame.update(id,n=>{const it=(n.items||[]).find(i=>i.id===itemId);if(it)it.text=text;});
+};
+
+// ── SPORT editing ──────────────────────────────────────────────
+window.addSportZone=function(id){
+  Frame.update(id,n=>{(n.zones=n.zones||[]).push({z:'',v:''});});
+  refreshNoteView(id);
+};
+window.deleteSportZone=function(id,i){
+  Frame.update(id,n=>{n.zones=(n.zones||[]).filter((_,j)=>j!==i);});
+  refreshNoteView(id);
+};
+window.updateSportZone=function(id,i,k,v){
+  Frame.update(id,n=>{if(n.zones&&n.zones[i])n.zones[i][k]=v;});
+};
+window.addSportSchedule=function(id){
+  Frame.update(id,n=>{(n.schedule=n.schedule||[]).push({day:'',act:''});});
+  refreshNoteView(id);
+};
+window.deleteSportSchedule=function(id,i){
+  Frame.update(id,n=>{n.schedule=(n.schedule||[]).filter((_,j)=>j!==i);});
+  refreshNoteView(id);
+};
+window.updateSportSchedule=function(id,i,k,v){
+  Frame.update(id,n=>{if(n.schedule&&n.schedule[i])n.schedule[i][k]=v;});
+};
+
+// ── ANALYSIS editing ───────────────────────────────────────────
+window.addAnalysisItem=function(id,sec){
+  Frame.update(id,n=>{(n[sec]=n[sec]||[]).push('');});
+  refreshNoteView(id);
+};
+window.deleteAnalysisItem=function(id,sec,i){
+  Frame.update(id,n=>{n[sec]=(n[sec]||[]).filter((_,j)=>j!==i);});
+  refreshNoteView(id);
+};
+window.updateAnalysisItem=function(id,sec,i,v){
+  Frame.update(id,n=>{if(n[sec])n[sec][i]=v;});
+};
+
+// ── PERSONNALITES editing ──────────────────────────────────────
+window.addPersonality=function(id){
+  Frame.update(id,n=>{(n.entries=n.entries||[]).push({name:'Nouvelle personnalité',traits:[]});});
+  refreshNoteView(id);
+};
+window.deletePersonality=function(id,ei){
+  if(!confirm('Supprimer cette personnalité et tous ses traits ?'))return;
+  Frame.update(id,n=>{n.entries=(n.entries||[]).filter((_,j)=>j!==ei);});
+  refreshNoteView(id);
+};
+window.updatePersonalityName=function(id,ei,v){
+  Frame.update(id,n=>{if(n.entries&&n.entries[ei])n.entries[ei].name=v;});
+};
+window.addTrait=function(id,ei){
+  Frame.update(id,n=>{if(n.entries&&n.entries[ei]){(n.entries[ei].traits=n.entries[ei].traits||[]).push('');}});
+  refreshNoteView(id);
+};
+window.deleteTrait=function(id,ei,ti){
+  Frame.update(id,n=>{if(n.entries&&n.entries[ei]&&n.entries[ei].traits)n.entries[ei].traits=n.entries[ei].traits.filter((_,j)=>j!==ti);});
+  refreshNoteView(id);
+};
+window.updateTrait=function(id,ei,ti,v){
+  Frame.update(id,n=>{if(n.entries&&n.entries[ei]&&n.entries[ei].traits)n.entries[ei].traits[ti]=v;});
+};
 
 // ── FRAME EVENTS ──────────────────────────────────────────────
 function bindNoteEvents(id){
