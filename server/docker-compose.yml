@@ -1,0 +1,22 @@
+services:
+  sync:
+    build: .
+    container_name: lifeos-sync
+    restart: unless-stopped
+    environment:
+      - SYNC_TOKEN=${SYNC_TOKEN}
+      - DATA_DIR=/data
+      - PORT=3001
+    volumes:
+      - sync_data:/data
+    networks:
+      - n8n_default
+    expose:
+      - "3001"
+
+volumes:
+  sync_data:
+
+networks:
+  n8n_default:
+    external: true

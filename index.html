@@ -522,11 +522,81 @@ self.addEventListener('fetch',e=>{
 // ── STORAGE ────────────────────────────────────────────────────
 const S={
   get(k,d=null){try{const v=localStorage.getItem(k);return v!=null?JSON.parse(v):d}catch{return d}},
-  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){console.warn(e)}},
-  del(k){localStorage.removeItem(k)},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));if(!k.startsWith('sync_')&&typeof Sync!=='undefined')Sync.schedulePush()}catch(e){console.warn(e)}},
+  del(k){localStorage.removeItem(k);if(!k.startsWith('sync_')&&typeof Sync!=='undefined')Sync.schedulePush()},
   keys(){return Object.keys(localStorage)},
   clear(){localStorage.clear()},
   bytes(){try{return JSON.stringify(localStorage).length}catch{return 0}}
+};
+
+// ── CROSS-DEVICE SYNC ──────────────────────────────────────────
+const Sync={
+  url(){return (S.get('sync_url','')||'').replace(/\/$/,'')},
+  token(){return S.get('sync_token','')||''},
+  enabled(){return !!(this.url()&&this.token())},
+  status(){return S.get('sync_status','idle')},
+  setStatus(s){S.set('sync_status',s);const el=document.getElementById('sync-badge');if(el)el.textContent=this._label(s)},
+  _label(s){return({idle:'',pushing:'⟳ envoi…',pulling:'⟳ réception…',ok:'✓ synchronisé',error:'⚠ erreur sync',offline:'hors ligne'})[s]||''},
+  _timer:null,
+  schedulePush(){
+    if(!this.enabled())return;
+    clearTimeout(this._timer);
+    this._timer=setTimeout(()=>this.push().catch(()=>{}),2000);
+  },
+  async push(){
+    if(!this.enabled())return false;
+    this.setStatus('pushing');
+    const ts=Date.now();
+    const data={};
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      if(k.startsWith('sync_'))continue;
+      data[k]=localStorage.getItem(k);
+    }
+    try{
+      const r=await fetch(this.url()+'/api/data',{
+        method:'PUT',
+        headers:{'Authorization':'Bearer '+this.token(),'Content-Type':'application/json'},
+        body:JSON.stringify({lastUpdated:ts,data})
+      });
+      if(!r.ok){this.setStatus('error');return false}
+      const j=await r.json();
+      if(j.ok){S.set('sync_last_updated',String(ts));this.setStatus('ok');return true}
+      this.setStatus('error');return false;
+    }catch(e){this.setStatus('offline');return false}
+  },
+  async pull(){
+    if(!this.enabled())return false;
+    this.setStatus('pulling');
+    try{
+      const r=await fetch(this.url()+'/api/data',{
+        headers:{'Authorization':'Bearer '+this.token()}
+      });
+      if(!r.ok){this.setStatus('error');return false}
+      const remote=await r.json();
+      const localTs=parseInt(S.get('sync_last_updated','0'));
+      const remoteTs=remote.lastUpdated||0;
+      if(remoteTs>localTs&&remote.data){
+        // Preserve sync_* keys
+        const preserve={};
+        for(let i=0;i<localStorage.length;i++){
+          const k=localStorage.key(i);
+          if(k.startsWith('sync_'))preserve[k]=localStorage.getItem(k);
+        }
+        localStorage.clear();
+        Object.keys(preserve).forEach(k=>localStorage.setItem(k,preserve[k]));
+        Object.keys(remote.data).forEach(k=>{
+          if(k.startsWith('sync_'))return;
+          localStorage.setItem(k,remote.data[k]);
+        });
+        S.set('sync_last_updated',String(remoteTs));
+        this.setStatus('ok');
+        return true;
+      }
+      this.setStatus('ok');
+      return false;
+    }catch(e){this.setStatus('offline');return false}
+  }
 };
 
 // ── DATE UTILS ─────────────────────────────────────────────────
@@ -1743,6 +1813,8 @@ function renderSettings(){
   const calConnected=Cal.valid();
   const claudeMem=S.get('claude_memory','')||'';
   const memChars=claudeMem.length;
+  const syncUrl=S.get('sync_url','')||'';const syncTok=S.get('sync_token','')||'';
+  const syncEnabled=Sync.enabled();const syncStatus=Sync.status();const syncLast=S.get('sync_last_updated','0');
   return`
 <div class="set-body">
   <div class="set-hd">Clés API</div>
@@ -1784,6 +1856,29 @@ function renderSettings(){
       <div class="chevron"></div>
     </div>
   </div>
+  <div class="set-hd">Synchronisation entre appareils</div>
+  <div class="set-grp">
+    <label class="set-inp-lbl">URL du serveur sync</label>
+    <input class="set-inp" type="text" placeholder="https://sync.qavonn.fr" value="${esc(syncUrl)}"
+      onchange="S.set('sync_url',this.value);refreshSettingsSection()" autocomplete="off">
+    <label class="set-inp-lbl" style="margin-top:8px">Token d'accès</label>
+    <input class="set-inp" type="password" placeholder="token généré par le serveur" value="${esc(syncTok)}"
+      onchange="S.set('sync_token',this.value);refreshSettingsSection()" autocomplete="off">
+    <div class="set-row" style="border-top:.5px solid var(--sep);cursor:pointer" onclick="syncPullNow()">
+      <span class="set-row-icon" style="background:#34C759;border-radius:7px;width:29px;height:29px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.5 9a9 9 0 0 1 14.8-3.5L23 10M1 14l4.7 4.5A9 9 0 0 0 20.5 15"/></svg></span>
+      <span class="set-row-lbl">Récupérer maintenant <span id="sync-badge" style="color:var(--sec);font-size:13px;margin-left:6px">${Sync._label(syncStatus)}</span></span>
+      <div class="chevron"></div>
+    </div>
+    <div class="set-row" style="border-top:.5px solid var(--sep);cursor:pointer" onclick="syncPushNow()">
+      <span class="set-row-icon" style="background:#007AFF;border-radius:7px;width:29px;height:29px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>
+      <span class="set-row-lbl">Envoyer maintenant</span>
+      <div class="chevron"></div>
+    </div>
+    <div class="set-helper">
+      ${syncEnabled?`<span style="color:var(--green)">✓ Sync active</span>`:`<span style="color:var(--sec)">Renseigne URL + Token sur chaque appareil</span>`}
+      ${syncLast!=='0'?` · Dernière sync: ${new Date(parseInt(syncLast)).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}`:''}
+    </div>
+  </div>
   <div class="set-hd">Données</div>
   <div class="set-grp">
     <div class="set-row" onclick="exportData()">
@@ -1821,6 +1916,20 @@ function renderSettings(){
 window.settingsCalAction=function(){
   if(Cal.valid()){if(confirm('Déconnecter Google Calendar ?')){S.del('google_token');S.del('google_token_expiry');alert('Déconnecté.');refreshSettingsSection();}}
   else{Cal.startOAuth();}};
+
+window.syncPullNow=async function(){
+  if(!Sync.enabled()){alert('Renseigne l\\'URL du serveur et le token avant.');return;}
+  const updated=await Sync.pull();
+  if(updated){alert('Données récupérées du serveur. Rechargement…');location.reload();}
+  else{refreshSettingsSection();}
+};
+window.syncPushNow=async function(){
+  if(!Sync.enabled()){alert('Renseigne l\\'URL du serveur et le token avant.');return;}
+  const ok=await Sync.push();
+  if(ok)alert('Données envoyées au serveur.');
+  else alert('Échec de l\\'envoi. Vérifie URL et token.');
+  refreshSettingsSection();
+};
 
 window.exportData=function(){
   const allData={};S.keys().forEach(k=>{allData[k]=S.get(k);});
@@ -1979,6 +2088,13 @@ function init(){
   }
 
   render();
+
+  // Auto-pull from sync server on startup (if configured)
+  if(Sync.enabled()){
+    Sync.pull().then(updated=>{
+      if(updated){render();}
+    }).catch(()=>{});
+  }
 
   // Auto-sync calendar events on startup
   if(Cal.valid()){
