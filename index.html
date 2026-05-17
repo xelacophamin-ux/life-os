@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Life OS">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#000000">
@@ -25,7 +25,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;background:#
 /* ── MOBILE SHELL ── */
 .sh-m{display:flex;flex-direction:column;height:100%;background:var(--bg)}
 .nav{position:fixed;top:0;left:0;right:0;
-  height:44px;padding-top:0;
+  height:54px;padding-top:0;
   background:rgba(242,242,247,.9);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   border-bottom:.5px solid var(--sep);display:flex;align-items:center;
   padding-left:16px;padding-right:16px;z-index:200;gap:8px}
@@ -37,20 +37,20 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;background:#
   font-family:inherit;padding:8px 0;min-width:64px;text-align:right}
 /* wrap fills shell; screen is repositioned so content never hides behind nav/tab-bar */
 .wrap{flex:1;overflow:hidden;position:relative}
-.screen{position:absolute;top:44px;left:0;right:0;bottom:49px;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg)}
+.screen{position:absolute;top:54px;left:0;right:0;bottom:58px;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg)}
 .screen.slide-out{transform:translateX(-30%);transition:transform .3s ease;pointer-events:none}
 .screen.slide-in{transform:translateX(100%)}
 .screen.slide-in.active{transform:translateX(0);transition:transform .3s ease}
 .tab-bar{position:fixed;bottom:0;left:0;right:0;
-  height:49px;padding-bottom:0;
+  height:58px;padding-bottom:0;
   background:rgba(255,255,255,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   border-top:.5px solid var(--sep);display:flex;align-items:stretch;z-index:200}
-.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-  cursor:pointer;padding:6px 0;color:var(--sec);font-size:10px;font-weight:500;position:relative}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  cursor:pointer;padding:10px 0;color:var(--sec);font-size:10px;font-weight:500;position:relative}
 .tab.on{color:var(--blue)}
 .tab svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .tab-dot{position:absolute;top:6px;right:calc(50% - 16px);width:6px;height:6px;border-radius:50%;background:var(--blue)}
-.fab-settings{position:fixed;top:7px;right:16px;z-index:210;background:none;
+.fab-settings{position:fixed;top:12px;right:16px;z-index:210;background:none;
   border:none;cursor:pointer;color:var(--blue);width:30px;height:30px;
   display:flex;align-items:center;justify-content:center}
 .a2hs-banner{position:fixed;left:8px;right:8px;bottom:57px;z-index:300;
@@ -64,18 +64,18 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;background:#
   cursor:pointer;padding:0 4px;line-height:1}
 /* PWA standalone (home screen icon): full safe-area support top + bottom */
 @media(display-mode:standalone){
-  .nav{height:calc(44px + env(safe-area-inset-top,0px));padding-top:env(safe-area-inset-top,0px)}
-  .screen{top:calc(44px + env(safe-area-inset-top,0px));bottom:calc(49px + env(safe-area-inset-bottom,0px))}
-  .tab-bar{height:calc(49px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px)}
-  .fab-settings{top:calc(env(safe-area-inset-top,0px) + 7px)}
-  .rte-kb-toolbar{bottom:calc(49px + env(safe-area-inset-bottom,0px))}
+  .nav{height:calc(54px + env(safe-area-inset-top,0px));padding-top:env(safe-area-inset-top,0px)}
+  .screen{top:calc(54px + env(safe-area-inset-top,0px));bottom:58px}
+  .tab-bar{height:58px}
+  .fab-settings{top:calc(env(safe-area-inset-top,0px) + 12px)}
+  .rte-kb-toolbar{bottom:58px}
 }
 /* JS-detected standalone (more reliable on iOS than media query) */
-html.ios-standalone .nav{height:calc(44px + env(safe-area-inset-top,0px));padding-top:env(safe-area-inset-top,0px)}
-html.ios-standalone .screen{top:calc(44px + env(safe-area-inset-top,0px));bottom:calc(49px + env(safe-area-inset-bottom,0px))}
-html.ios-standalone .tab-bar{height:calc(49px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px)}
-html.ios-standalone .fab-settings{top:calc(env(safe-area-inset-top,0px) + 7px)}
-html.ios-standalone .rte-kb-toolbar{bottom:calc(49px + env(safe-area-inset-bottom,0px))}
+html.ios-standalone .nav{height:calc(54px + env(safe-area-inset-top,0px));padding-top:env(safe-area-inset-top,0px)}
+html.ios-standalone .screen{top:calc(54px + env(safe-area-inset-top,0px));bottom:58px}
+html.ios-standalone .tab-bar{height:58px}
+html.ios-standalone .fab-settings{top:calc(env(safe-area-inset-top,0px) + 12px)}
+html.ios-standalone .rte-kb-toolbar{bottom:58px}
 
 /* ── DESKTOP SHELL ── */
 @media(min-width:768px){
