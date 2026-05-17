@@ -34,8 +34,14 @@ function readData() {
 
 function writeData(payload) {
   const tmp = DATA_FILE + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(payload));
-  fs.renameSync(tmp, DATA_FILE);
+  try {
+    fs.writeFileSync(tmp, JSON.stringify(payload));
+    fs.renameSync(tmp, DATA_FILE);
+    return true;
+  } catch (e) {
+    console.error('writeData failed:', e.message);
+    return false;
+  }
 }
 
 function json(res, code, obj) {
@@ -78,7 +84,9 @@ const server = http.createServer((req, res) => {
       const incoming = payload.lastUpdated || 0;
       const current = existing.lastUpdated || 0;
       if (incoming >= current) {
-        writeData(payload);
+        if (!writeData(payload)) {
+          return json(res, 500, { error: 'write failed', detail: 'volume not writable' });
+        }
         return json(res, 200, { ok: true, lastUpdated: incoming });
       }
       return json(res, 200, { ok: false, reason: 'stale', lastUpdated: current });
