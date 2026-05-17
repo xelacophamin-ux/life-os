@@ -490,28 +490,12 @@ html.ios-standalone .rte-kb-toolbar{bottom:58px}
   const u=URL.createObjectURL(b);
   const l=document.createElement('link');l.rel='manifest';l.href=u;document.head.appendChild(l);
   const aicon=document.createElement('link');aicon.rel='apple-touch-icon';aicon.href=ico;document.head.appendChild(aicon);
-  // Service Worker — network-first (always fetch fresh, cache for offline only)
-  if('serviceWorker' in navigator && location.protocol==='https:'){
-    const swCode=`
-const CACHE='life-os-v3';
-self.addEventListener('install',e=>{self.skipWaiting();});
-self.addEventListener('activate',e=>{
-  e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
-  self.clients.claim();
-});
-self.addEventListener('fetch',e=>{
-  if(e.request.method!=='GET')return;
-  if(e.request.url.includes('/api/'))return; // never cache API calls
-  e.respondWith(
-    fetch(e.request).then(r=>{
-      if(r.ok){const cl=r.clone();caches.open(CACHE).then(c=>c.put(e.request,cl));}
-      return r;
-    }).catch(()=>caches.match(e.request))
-  );
-});`;
-    const swBlob=new Blob([swCode],{type:'text/javascript'});
-    const swUrl=URL.createObjectURL(swBlob);
-    navigator.serviceWorker.register(swUrl,{scope:'/'}).catch(()=>{});}
+  // Unregister any existing service worker + purge all caches.
+  // The SW was causing stale-content issues; offline persistence is now handled by the sync server.
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistrations().then(regs=>regs.forEach(r=>r.unregister())).catch(()=>{});
+    if(window.caches)caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).catch(()=>{});
+  }
 })();
 
 // ── STORAGE ────────────────────────────────────────────────────
