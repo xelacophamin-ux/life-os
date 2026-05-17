@@ -1918,16 +1918,16 @@ window.settingsCalAction=function(){
   else{Cal.startOAuth();}};
 
 window.syncPullNow=async function(){
-  if(!Sync.enabled()){alert('Renseigne l\\'URL du serveur et le token avant.');return;}
+  if(!Sync.enabled()){alert("Renseigne l'URL du serveur et le token avant.");return;}
   const updated=await Sync.pull();
   if(updated){alert('Données récupérées du serveur. Rechargement…');location.reload();}
   else{refreshSettingsSection();}
 };
 window.syncPushNow=async function(){
-  if(!Sync.enabled()){alert('Renseigne l\\'URL du serveur et le token avant.');return;}
+  if(!Sync.enabled()){alert("Renseigne l'URL du serveur et le token avant.");return;}
   const ok=await Sync.push();
   if(ok)alert('Données envoyées au serveur.');
-  else alert('Échec de l\\'envoi. Vérifie URL et token.');
+  else alert("Échec de l'envoi. Vérifie URL et token.");
   refreshSettingsSection();
 };
 
