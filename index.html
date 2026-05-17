@@ -423,10 +423,21 @@ html.ios-standalone .rte-kb-toolbar{bottom:calc(58px + env(safe-area-inset-botto
 .recap-ctx-label{font-size:14px;color:var(--sec)}
 .recap-ctx-val{font-size:14px;font-weight:600;color:var(--text)}
 .recap-result{background:var(--card);border-radius:12px;padding:16px;margin-bottom:16px;line-height:1.7}
-.recap-result p{font-size:15px;margin-bottom:8px;white-space:pre-wrap}
+.recap-result p{font-size:15px;margin-bottom:10px}
+.recap-result h1{font-size:22px;font-weight:700;margin:20px 0 10px;color:var(--text);letter-spacing:-.3px}
+.recap-result h2{font-size:18px;font-weight:700;margin:18px 0 8px;color:var(--text);letter-spacing:-.2px}
 .recap-result h3{font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;
   margin:18px 0 8px;padding-bottom:6px;border-bottom:1.5px solid var(--sep);color:var(--text)}
-.recap-result h3:first-child{margin-top:0}
+.recap-result h1:first-child,.recap-result h2:first-child,.recap-result h3:first-child{margin-top:0}
+.recap-result strong{font-weight:700;color:var(--text)}
+.recap-result em{font-style:italic}
+.recap-result code{background:var(--bg);padding:2px 6px;border-radius:4px;font-family:ui-monospace,Menlo,monospace;font-size:13px}
+.recap-result ul,.recap-result ol{margin:8px 0 12px 0;padding-left:24px}
+.recap-result li{font-size:15px;margin:3px 0;line-height:1.6}
+.recap-result .md-table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px;background:var(--card)}
+.recap-result .md-table th{background:var(--bg);font-weight:600;text-align:left;padding:8px 12px;border:1px solid var(--sep);color:var(--text)}
+.recap-result .md-table td{padding:8px 12px;border:1px solid var(--sep);color:var(--text)}
+.recap-result blockquote{border-left:3px solid var(--blue);margin:10px 0;padding:4px 14px;color:var(--sec);background:var(--bg);border-radius:0 6px 6px 0}
 .recap-hist-hd{font-size:20px;font-weight:700;margin:20px 0 12px}
 .recap-hist-item{background:var(--card);border-radius:10px;padding:13px 16px;margin-bottom:8px;
   cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .1s}
@@ -556,14 +567,9 @@ const Sync={
       const localTs=parseInt(S.get('sync_last_updated','0'));
       const remoteTs=remote.lastUpdated||0;
       if(remoteTs>localTs&&remote.data){
-        // Preserve sync_* keys
-        const preserve={};
-        for(let i=0;i<localStorage.length;i++){
-          const k=localStorage.key(i);
-          if(k.startsWith('sync_'))preserve[k]=localStorage.getItem(k);
-        }
-        localStorage.clear();
-        Object.keys(preserve).forEach(k=>localStorage.setItem(k,preserve[k]));
+        // MERGE: apply remote keys without clearing local ones
+        // This preserves keys that haven't been pushed yet (e.g. API keys typed
+        // moments before quitting, before the 2s debounced push could fire).
         Object.keys(remote.data).forEach(k=>{
           if(k.startsWith('sync_'))return;
           localStorage.setItem(k,remote.data[k]);
@@ -1747,12 +1753,58 @@ function formatRecapDate(h){
 
 function formatRecapText(text){
   if(!text)return'';
-  let html=text
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/^(\d+\/\s*[A-ZÀÂÉÈÊËÎÏÔÙÛÜŸÇŒÆ][A-ZÀÂÉÈÊËÎÏÔÙÛÜŸÇŒÆa-záàâéèêëîïôùûüÿçœæ\s\-'—]+)/gm,'<h3>$1</h3>')
-    .replace(/\n\n+/g,'</p><p>')
-    .replace(/\n/g,'<br>');
-  return`<p>${html}</p>`;}
+  // 1. Escape HTML
+  let s=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  // 2. Tables: header row | separator row | body rows
+  s=s.replace(/^\|(.+)\|\s*\n\|[\s:|\-]+\|\s*\n((?:\|.+\|\s*\n?)+)/gm,(_,header,body)=>{
+    const hcells=header.split('|').map(c=>c.trim()).filter(c=>c!=='');
+    const rows=body.trim().split('\n');
+    let t='<table class="md-table"><thead><tr>';
+    hcells.forEach(c=>t+=`<th>${c}</th>`);
+    t+='</tr></thead><tbody>';
+    rows.forEach(r=>{
+      const cells=r.replace(/^\||\|$/g,'').split('|').map(c=>c.trim());
+      t+='<tr>'+cells.map(c=>`<td>${c}</td>`).join('')+'</tr>';
+    });
+    return t+'</tbody></table>';
+  });
+
+  // 3. Custom French day heading (e.g. "Lundi — Bilan" or "1/ Titre")
+  s=s.replace(/^(\d+\/\s*[A-ZÀÂÉÈÊËÎÏÔÙÛÜŸÇŒÆ][^\n]+)$/gm,'<h3>$1</h3>');
+
+  // 4. Markdown headings
+  s=s.replace(/^### (.+)$/gm,'<h3>$1</h3>')
+     .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+     .replace(/^# (.+)$/gm,'<h1>$1</h1>');
+
+  // 5. Bold / italic / code (inline)
+  s=s.replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>')
+     .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g,'$1<em>$2</em>')
+     .replace(/`([^`\n]+)`/g,'<code>$1</code>');
+
+  // 6. Lists
+  s=s.replace(/(?:^[-*] .+\n?)+/gm,m=>{
+    const items=m.trim().split('\n').map(l=>l.replace(/^[-*] /,''));
+    return '<ul>'+items.map(i=>`<li>${i}</li>`).join('')+'</ul>';
+  });
+  s=s.replace(/(?:^\d+\. .+\n?)+/gm,m=>{
+    const items=m.trim().split('\n').map(l=>l.replace(/^\d+\. /,''));
+    return '<ol>'+items.map(i=>`<li>${i}</li>`).join('')+'</ol>';
+  });
+
+  // 7. Blockquotes
+  s=s.replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>');
+
+  // 8. Paragraphs: wrap remaining lines, but leave block-level elements alone
+  const blocks=s.split(/\n\n+/);
+  return blocks.map(b=>{
+    b=b.trim();
+    if(!b)return'';
+    if(/^<(h\d|ul|ol|table|p|div|blockquote)/.test(b))return b;
+    return `<p>${b.replace(/\n/g,'<br>')}</p>`;
+  }).join('');
+}
 
 window.recapSetType=function(t){
   A.recapType=t;A.recapText=null;A.recapLoading=false;A.recapViewKey=null;
