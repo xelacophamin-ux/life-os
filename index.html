@@ -465,6 +465,34 @@ html.ios-standalone .rte-kb-toolbar{bottom:calc(58px + env(safe-area-inset-botto
 .recap-hist-time{font-size:13px;color:var(--sec)}
 
 /* ══════════════════════════════════════════════
+   SUCCESS
+══════════════════════════════════════════════ */
+.success-body{padding:18px 16px 24px;max-width:720px;margin:0 auto}
+.success-hd{padding:8px 0 16px}
+.success-title{font-size:34px;font-weight:700;letter-spacing:-.5px;line-height:1.1}
+.success-sub{font-size:14px;color:var(--sec);margin-top:4px}
+.success-add-btn{width:100%;background:var(--blue);color:#fff;border:none;border-radius:12px;
+  padding:14px 16px;font-family:inherit;font-size:16px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:18px;
+  -webkit-tap-highlight-color:transparent;transition:opacity .1s}
+.success-add-btn:active{opacity:.85}
+.success-add-btn .add-circle{background:rgba(255,255,255,.2);color:#fff;width:22px;height:22px;
+  border-radius:50%;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.success-card{background:var(--card);border-radius:14px;padding:14px 14px 14px 16px;
+  margin-bottom:10px;display:flex;align-items:flex-start;gap:12px;
+  box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.success-emoji{flex-shrink:0;width:42px;height:42px;border-radius:10px;background:var(--bg);
+  border:none;font-size:24px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;line-height:1;padding:0}
+.success-emoji:active{background:rgba(0,0,0,.08)}
+.success-content{flex:1;min-width:0}
+.success-date{font-size:12px;color:var(--sec);font-weight:500;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.success-text{width:100%;border:none;background:transparent;outline:none;resize:none;
+  font-family:inherit;font-size:16px;color:var(--text);line-height:1.45;padding:0;min-height:24px}
+.success-text::placeholder{color:rgba(60,60,67,.3)}
+.success-empty{text-align:center;padding:40px 20px;background:var(--card);border-radius:14px;margin:8px 0}
+
+/* ══════════════════════════════════════════════
    SETTINGS
 ══════════════════════════════════════════════ */
 .set-body{padding:20px 0 40px}
@@ -755,6 +783,32 @@ const AI={
 };
 
 // ── RECAP DB ───────────────────────────────────────────────────
+// ── SUCCESS LOG ────────────────────────────────────────────────
+const Success={
+  get(){return S.get('success_entries',[])||[]},
+  save(arr){S.set('success_entries',arr)},
+  add(text,emoji='🏆'){
+    const arr=this.get();
+    arr.unshift({id:uid(),ts:Date.now(),text:text||'',emoji});
+    this.save(arr);
+  },
+  remove(id){this.save(this.get().filter(e=>e.id!==id))},
+  updateText(id,text){
+    const arr=this.get();const e=arr.find(x=>x.id===id);
+    if(e){e.text=text;this.save(arr);}
+  },
+  updateEmoji(id,emoji){
+    const arr=this.get();const e=arr.find(x=>x.id===id);
+    if(e){e.emoji=emoji;this.save(arr);}
+  },
+  // Items in a date range (inclusive of both ends)
+  rangeText(start,end){
+    const s=start.getTime();const e=new Date(end);e.setHours(23,59,59,999);
+    const eTs=e.getTime();
+    return this.get().filter(x=>x.ts>=s&&x.ts<=eTs);
+  }
+};
+
 const Recap={
   save(type,dateObj,content){
     const ts=Date.now();
@@ -782,6 +836,13 @@ const Recap={
     prompt+=`\n=== OBJECTIFS (Goals) ===\n`;
     if(goals.length===0)prompt+='Aucun objectif défini.\n';
     else goals.forEach(g=>prompt+=`[${g.checked?'✓':'○'}] ${g.text}\n`);
+    const successes=Success.rangeText(start,end);
+    prompt+=`\n=== SUCCÈS / ACCOMPLISSEMENTS DE LA PÉRIODE ===\n`;
+    if(successes.length===0)prompt+='Aucun succès enregistré pour cette période.\n';
+    else successes.forEach(s=>{
+      const d=new Date(s.ts);
+      prompt+=`${D.key(d)} ${s.emoji||'🏆'} : ${s.text}\n`;
+    });
     return prompt;}
 };
 
@@ -842,6 +903,9 @@ function mobileShell(){
     <div class="tab${A.tab==='calendar'?' on':''}" onclick="switchTab('calendar')">
       ${tabIcon('calendar')}<span>Calendrier</span>
     </div>
+    <div class="tab${A.tab==='success'?' on':''}" onclick="switchTab('success')">
+      ${tabIcon('success')}<span>Succès</span>
+    </div>
     <div class="tab${A.tab==='recap'?' on':''}" onclick="switchTab('recap')">
       ${tabIcon('recap')}<span>Recap</span>
     </div>
@@ -876,6 +940,7 @@ function tabIcon(t){
     frame:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
     log:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
     calendar:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+    success:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>`,
     recap:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`
   };
   return icons[t]||'';
@@ -887,7 +952,7 @@ function setupMobile(){
 // ── DESKTOP SHELL ─────────────────────────────────────────────
 function desktopShell(){
   const tabs=[{id:'frame',label:'Frame'},{id:'log',label:'Log'},{id:'calendar',label:'Calendrier'},
-    {id:'recap',label:'Recap'}];
+    {id:'success',label:'Succès'},{id:'recap',label:'Recap'}];
   return `
 <div class="sh-d">
   <nav class="sidebar">
@@ -908,6 +973,7 @@ function desktopShell(){
     <div class="sec" id="sec-frame"></div>
     <div class="sec" id="sec-log"></div>
     <div class="sec" id="sec-calendar"></div>
+    <div class="sec" id="sec-success"></div>
     <div class="sec" id="sec-recap"></div>
     <div class="sec" id="sec-settings"></div>
   </main>
@@ -920,6 +986,7 @@ function sideIcon(t){
     log:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
     calendar:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
     recap:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+    success:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>`,
     settings:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`
   };
   return icons[t]||'';
@@ -961,7 +1028,7 @@ function updateNavBar(){
   const title=document.getElementById('nav-title');
   const right=document.getElementById('nav-right-btn');
   if(!back)return;
-  const tabTitles={frame:'Frame',log:'Log',calendar:'Calendrier',recap:'Recap',settings:'Paramètres'};
+  const tabTitles={frame:'Frame',log:'Log',calendar:'Calendrier',success:'Succès',recap:'Recap',settings:'Paramètres'};
   if(A.tab==='frame'&&A.noteLevel===1&&A.noteId){
     back.style.visibility='visible';back.textContent='Notes';
     const n=Frame.note(A.noteId);title.textContent=n?n.title:'Note';
@@ -1007,6 +1074,7 @@ function renderSection(tab){
     case 'frame': return renderFrame();
     case 'log': return renderLog();
     case 'calendar': return renderCalendar();
+    case 'success': return renderSuccess();
     case 'recap': return renderRecap();
     case 'settings': return renderSettings();
     default: return '';}
@@ -1851,6 +1919,85 @@ function refreshCalSection(){
 // ══════════════════════════════════════════════════════════════
 // RECAP SECTION
 // ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// SUCCESS SECTION
+// ══════════════════════════════════════════════════════════════
+function renderSuccess(){
+  const entries=Success.get();
+  const today=new Date();
+  // Relative date label
+  const relDate=(ts)=>{
+    const d=new Date(ts);
+    const dDay=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+    const tDay=new Date(today.getFullYear(),today.getMonth(),today.getDate());
+    const diff=Math.round((tDay-dDay)/(24*60*60*1000));
+    if(diff===0)return"Aujourd'hui";
+    if(diff===1)return'Hier';
+    if(diff<7)return`il y a ${diff} jours`;
+    if(diff<30)return`il y a ${Math.round(diff/7)} semaine${Math.round(diff/7)>1?'s':''}`;
+    return D.frenchLong(d);
+  };
+  return`
+<div class="success-body">
+  <div class="success-hd">
+    <div class="success-title">Succès</div>
+    <div class="success-sub">${entries.length} accomplissement${entries.length>1?'s':''} célébré${entries.length>1?'s':''}</div>
+  </div>
+  <button class="success-add-btn" onclick="addSuccess()">
+    <span class="add-circle">＋</span><span>Ajouter un succès</span>
+  </button>
+  ${entries.length===0?`
+  <div class="success-empty">
+    <div style="font-size:42px;line-height:1;margin-bottom:8px">🏆</div>
+    <div style="font-weight:600;font-size:17px;margin-bottom:4px">Aucun succès pour l'instant</div>
+    <div style="font-size:14px;color:var(--sec);max-width:280px;margin:0 auto">Note ici tout ce dont tu es fier — petites victoires comme grandes étapes.</div>
+  </div>`:''}
+  ${entries.map(e=>`
+  <div class="success-card" id="suc-${e.id}">
+    <button class="success-emoji" onclick="editSuccessEmoji('${e.id}')">${e.emoji||'🏆'}</button>
+    <div class="success-content">
+      <div class="success-date">${relDate(e.ts)} · ${new Date(e.ts).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'})}</div>
+      <textarea class="success-text" rows="1"
+        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';deb('suc-${e.id}',()=>Success.updateText('${e.id}',this.value),400)"
+        placeholder="Décris ton accomplissement…">${esc(e.text)}</textarea>
+    </div>
+    <button class="row-del" onclick="deleteSuccess('${e.id}')" title="Supprimer">✕</button>
+  </div>`).join('')}
+  <div style="height:24px"></div>
+</div>`;
+}
+
+function refreshSuccessSection(){
+  if(A.mobile()){const main=document.getElementById('screen-main');if(main)main.innerHTML=renderSuccess();}
+  else{const sec=document.getElementById('sec-success');if(sec){sec.innerHTML=renderSuccess();sec.dataset.loaded='1';}}
+}
+
+window.addSuccess=function(){
+  Success.add('');
+  refreshSuccessSection();
+  // Focus the new textarea
+  setTimeout(()=>{
+    const ta=document.querySelector('.success-card .success-text');
+    if(ta)ta.focus();
+  },80);
+};
+window.deleteSuccess=function(id){
+  if(!confirm('Supprimer ce succès ?'))return;
+  Success.remove(id);
+  refreshSuccessSection();
+};
+window.editSuccessEmoji=function(id){
+  const arr=Success.get();const e=arr.find(x=>x.id===id);
+  if(!e)return;
+  const cur=e.emoji||'🏆';
+  const v=prompt('Changer l\'emoji :',cur);
+  if(v===null)return;
+  const emoji=[...v.trim()][0]||'🏆';
+  Success.updateEmoji(id,emoji);
+  const btn=document.querySelector(`#suc-${id} .success-emoji`);
+  if(btn)btn.textContent=emoji;
+};
+
 function renderRecap(){
   const type=A.recapType;
   const today=new Date();let dates=[];let ctxLabel='';let ctxDates='';
