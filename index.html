@@ -486,7 +486,15 @@ html.ios-standalone .rte-kb-toolbar{bottom:calc(58px + env(safe-area-inset-botto
   cursor:pointer;-webkit-tap-highlight-color:transparent;line-height:1;padding:0}
 .success-emoji:active{background:rgba(0,0,0,.08)}
 .success-content{flex:1;min-width:0}
-.success-date{font-size:12px;color:var(--sec);font-weight:500;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.success-date-row{display:flex;align-items:center;gap:10px;margin-bottom:4px;flex-wrap:wrap}
+.success-date-input{border:none;background:transparent;font-family:inherit;font-size:13px;
+  color:var(--blue);font-weight:600;padding:0;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;outline:none;
+  appearance:none;-webkit-appearance:none;min-height:18px;min-width:108px;
+  letter-spacing:.2px}
+.success-date-input::-webkit-calendar-picker-indicator{opacity:.5;cursor:pointer;padding:0;margin-left:2px}
+.success-date-input::-webkit-date-and-time-value{text-align:left}
+.success-date-rel{font-size:11px;color:var(--sec);text-transform:uppercase;letter-spacing:.4px;font-weight:500}
 .success-text{width:100%;border:none;background:transparent;outline:none;resize:none;
   font-family:inherit;font-size:16px;color:var(--text);line-height:1.45;padding:0;min-height:24px}
 .success-text::placeholder{color:rgba(60,60,67,.3)}
@@ -786,10 +794,12 @@ const AI={
 // ── SUCCESS LOG ────────────────────────────────────────────────
 const Success={
   get(){return S.get('success_entries',[])||[]},
+  // Sorted by timestamp DESC (most recent first)
+  getSorted(){return this.get().slice().sort((a,b)=>b.ts-a.ts)},
   save(arr){S.set('success_entries',arr)},
-  add(text,emoji='🏆'){
+  add(text,emoji='🏆',ts){
     const arr=this.get();
-    arr.unshift({id:uid(),ts:Date.now(),text:text||'',emoji});
+    arr.unshift({id:uid(),ts:ts||Date.now(),text:text||'',emoji});
     this.save(arr);
   },
   remove(id){this.save(this.get().filter(e=>e.id!==id))},
@@ -801,11 +811,23 @@ const Success={
     const arr=this.get();const e=arr.find(x=>x.id===id);
     if(e){e.emoji=emoji;this.save(arr);}
   },
+  updateDate(id,iso){
+    if(!iso)return false;
+    // iso is "YYYY-MM-DD" — keep current time-of-day so the entry stays
+    // chronologically stable within the same day
+    const arr=this.get();const e=arr.find(x=>x.id===id);if(!e)return false;
+    const cur=new Date(e.ts);
+    const [y,m,d]=iso.split('-').map(Number);
+    if(!y||!m||!d)return false;
+    const nd=new Date(y,m-1,d,cur.getHours(),cur.getMinutes(),cur.getSeconds());
+    if(isNaN(nd.getTime()))return false;
+    e.ts=nd.getTime();this.save(arr);return true;
+  },
   // Items in a date range (inclusive of both ends)
   rangeText(start,end){
     const s=start.getTime();const e=new Date(end);e.setHours(23,59,59,999);
     const eTs=e.getTime();
-    return this.get().filter(x=>x.ts>=s&&x.ts<=eTs);
+    return this.getSorted().filter(x=>x.ts>=s&&x.ts<=eTs);
   }
 };
 
@@ -1923,9 +1945,8 @@ function refreshCalSection(){
 // SUCCESS SECTION
 // ══════════════════════════════════════════════════════════════
 function renderSuccess(){
-  const entries=Success.get();
+  const entries=Success.getSorted();
   const today=new Date();
-  // Relative date label
   const relDate=(ts)=>{
     const d=new Date(ts);
     const dDay=new Date(d.getFullYear(),d.getMonth(),d.getDate());
@@ -1933,10 +1954,13 @@ function renderSuccess(){
     const diff=Math.round((tDay-dDay)/(24*60*60*1000));
     if(diff===0)return"Aujourd'hui";
     if(diff===1)return'Hier';
-    if(diff<7)return`il y a ${diff} jours`;
-    if(diff<30)return`il y a ${Math.round(diff/7)} semaine${Math.round(diff/7)>1?'s':''}`;
+    if(diff===-1)return'Demain';
+    if(diff>0&&diff<7)return`il y a ${diff} jours`;
+    if(diff<0&&diff>-7)return`dans ${-diff} jours`;
+    if(diff>0&&diff<30)return`il y a ${Math.round(diff/7)} sem.`;
     return D.frenchLong(d);
   };
+  const isoOf=(ts)=>{const d=new Date(ts);return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;};
   return`
 <div class="success-body">
   <div class="success-hd">
@@ -1956,7 +1980,11 @@ function renderSuccess(){
   <div class="success-card" id="suc-${e.id}">
     <button class="success-emoji" onclick="editSuccessEmoji('${e.id}')">${e.emoji||'🏆'}</button>
     <div class="success-content">
-      <div class="success-date">${relDate(e.ts)} · ${new Date(e.ts).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'})}</div>
+      <div class="success-date-row">
+        <input type="date" class="success-date-input" value="${isoOf(e.ts)}"
+          onchange="updateSuccessDate('${e.id}',this.value)" max="${isoOf(Date.now())}">
+        <span class="success-date-rel">${relDate(e.ts)}</span>
+      </div>
       <textarea class="success-text" rows="1"
         oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';deb('suc-${e.id}',()=>Success.updateText('${e.id}',this.value),400)"
         placeholder="Décris ton accomplissement…">${esc(e.text)}</textarea>
@@ -1996,6 +2024,10 @@ window.editSuccessEmoji=function(id){
   Success.updateEmoji(id,emoji);
   const btn=document.querySelector(`#suc-${id} .success-emoji`);
   if(btn)btn.textContent=emoji;
+};
+window.updateSuccessDate=function(id,iso){
+  if(!iso)return;
+  if(Success.updateDate(id,iso))refreshSuccessSection();
 };
 
 function renderRecap(){
