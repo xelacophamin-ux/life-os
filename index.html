@@ -65,17 +65,17 @@ html,body{height:100%;overflow:hidden;background:#F2F2F7;font-family:-apple-syst
 /* PWA standalone (home screen icon): full safe-area support top + bottom */
 @media(display-mode:standalone){
   .nav{height:calc(54px + env(safe-area-inset-top,0px));padding-top:env(safe-area-inset-top,0px)}
-  .screen{top:calc(64px + env(safe-area-inset-top,0px));bottom:calc(58px + env(safe-area-inset-bottom,0px))}
-  .tab-bar{height:calc(58px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px)}
+  .screen{top:calc(64px + env(safe-area-inset-top,0px));bottom:calc(58px + env(safe-area-inset-bottom,0px) + 20px)}
+  .tab-bar{height:calc(58px + env(safe-area-inset-bottom,0px) + 20px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 20px)}
   .fab-settings{top:calc(env(safe-area-inset-top,0px) + 12px)}
-  .rte-kb-toolbar{bottom:calc(58px + env(safe-area-inset-bottom,0px))}
+  .rte-kb-toolbar{bottom:calc(58px + env(safe-area-inset-bottom,0px) + 20px)}
 }
 /* JS-detected standalone (more reliable on iOS than media query) */
 html.ios-standalone .nav{height:calc(54px + env(safe-area-inset-top,0px));padding-top:env(safe-area-inset-top,0px)}
-html.ios-standalone .screen{top:calc(64px + env(safe-area-inset-top,0px));bottom:calc(58px + env(safe-area-inset-bottom,0px))}
-html.ios-standalone .tab-bar{height:calc(58px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px)}
+html.ios-standalone .screen{top:calc(64px + env(safe-area-inset-top,0px));bottom:calc(58px + env(safe-area-inset-bottom,0px) + 20px)}
+html.ios-standalone .tab-bar{height:calc(58px + env(safe-area-inset-bottom,0px) + 20px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 20px)}
 html.ios-standalone .fab-settings{top:calc(env(safe-area-inset-top,0px) + 12px)}
-html.ios-standalone .rte-kb-toolbar{bottom:calc(58px + env(safe-area-inset-bottom,0px))}
+html.ios-standalone .rte-kb-toolbar{bottom:calc(58px + env(safe-area-inset-bottom,0px) + 20px)}
 
 /* ── DESKTOP SHELL ── */
 @media(min-width:768px){
