@@ -14,6 +14,19 @@ services:
     expose:
       - "3001"
 
+  garmin:
+    build: ./garmin
+    container_name: lifeos-garmin
+    restart: unless-stopped
+    environment:
+      - GARMIN_EMAIL=${GARMIN_EMAIL:-}
+      - GARMIN_PASSWORD=${GARMIN_PASSWORD:-}
+      - DATA_DIR=/data
+    volumes:
+      - sync_data:/data
+    networks:
+      - n8n_default
+
 volumes:
   sync_data:
 

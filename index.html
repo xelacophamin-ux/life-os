@@ -791,6 +791,63 @@ const AI={
 };
 
 // ── RECAP DB ───────────────────────────────────────────────────
+// ── GARMIN INTEGRATION ─────────────────────────────────────────
+const Garmin={
+  // Cache the last fetched data in localStorage so recaps always have something
+  // even if the server is unreachable.
+  cached(){return S.get('garmin_data',null)},
+  fetchedAt(){return parseInt(S.get('garmin_fetched_at','0'))||0},
+  async refresh(){
+    if(!Sync.enabled())return null;
+    try{
+      const r=await fetch(Sync.url()+'/api/garmin',{headers:{'Authorization':'Bearer '+Sync.token()}});
+      if(!r.ok)return null;
+      const data=await r.json();
+      S.set('garmin_data',data);
+      S.set('garmin_fetched_at',String(Date.now()));
+      return data;
+    }catch(e){return null}
+  },
+  // Build a human-readable summary for the Claude recap prompt
+  promptSummary(){
+    const d=this.cached();if(!d)return '';
+    const lines=[];
+    if(d.sleep){
+      const h=d.sleep.duration_hours;const score=d.sleep.score;
+      lines.push(`Sommeil: ${h?h+'h':'?'} ${score?`(score ${score}/100)`:''}`);
+      if(d.sleep.deep_seconds)lines.push(`  - sommeil profond: ${Math.round(d.sleep.deep_seconds/60)} min`);
+      if(d.sleep.rem_seconds)lines.push(`  - REM: ${Math.round(d.sleep.rem_seconds/60)} min`);
+    }
+    if(d.body_battery){
+      const bb=d.body_battery;
+      lines.push(`Body Battery: actuel ${bb.current||'?'} (min ${bb.min||'?'} / max ${bb.max||'?'}, chargé +${bb.charged||0}, drainé -${bb.drained||0})`);
+    }
+    if(d.training_readiness){
+      const t=d.training_readiness;
+      lines.push(`Training Readiness: ${t.score||'?'}/100 — ${t.level||''} — "${t.feedback_short||t.feedback_long||''}"`);
+      if(t.recovery_time)lines.push(`  - récupération recommandée: ${t.recovery_time}h`);
+    }
+    if(d.hrv){
+      lines.push(`HRV: ${d.hrv.last_night_avg||'?'}ms (${d.hrv.status||'?'}) — "${d.hrv.feedback_phrase||''}"`);
+    }
+    if(d.stress){
+      lines.push(`Stress moyen jour: ${d.stress.avg||'?'} (max ${d.stress.max||'?'})`);
+    }
+    if(d.training_status){
+      lines.push(`Statut entraînement: ${d.training_status.status||'?'} — VO2 max ${d.training_status.vo2_max||'?'}`);
+    }
+    if(d.steps){
+      lines.push(`Pas: ${d.steps.total||0}/${d.steps.goal||10000}`);
+    }
+    if(d.last_activity){
+      const a=d.last_activity;const dur=a.duration_seconds?Math.round(a.duration_seconds/60):0;
+      lines.push(`Dernière activité: ${a.type||'?'} — ${a.name||''} — ${dur} min, ${Math.round((a.distance_meters||0)/100)/10} km, ${a.calories||0} kcal`);
+    }
+    if(lines.length===0)return '';
+    return '\n=== GARMIN (corps & récupération) ===\n'+lines.join('\n')+'\n';
+  }
+};
+
 // ── SUCCESS LOG ────────────────────────────────────────────────
 const Success={
   get(){return S.get('success_entries',[])||[]},
@@ -865,6 +922,7 @@ const Recap={
       const d=new Date(s.ts);
       prompt+=`${D.key(d)} ${s.emoji||'🏆'} : ${s.text}\n`;
     });
+    prompt+=Garmin.promptSummary();
     return prompt;}
 };
 
@@ -2029,6 +2087,11 @@ window.updateSuccessDate=function(id,iso){
   if(!iso)return;
   if(Success.updateDate(id,iso))refreshSuccessSection();
 };
+window.garminRefresh=async function(){
+  const d=await Garmin.refresh();
+  if(d){refreshSettingsSection();alert('Garmin: données rafraîchies.');}
+  else alert("Impossible de récupérer les données Garmin.\nVérifie:\n- URL et Token sync configurés\n- Le container lifeos-garmin tourne (docker ps)\n- Les creds Garmin sont dans le .env du serveur");
+};
 
 function renderRecap(){
   const type=A.recapType;
@@ -2149,6 +2212,8 @@ window.triggerRecap=async function(){
     let d=new Date(first);while(d<=last){dates.push(new Date(d));d=D.addDays(d,1);}}
   A.recapLoading=true;A.recapText=null;refreshRecapSection();
   try{
+    // Refresh Garmin cache so the recap uses today's data
+    await Garmin.refresh().catch(()=>{});
     const prompt=Recap.buildPrompt(A.recapType,dates);
     const result=await AI.analyze(prompt);
     A.recapText=result;A.recapLoading=false;
@@ -2239,6 +2304,15 @@ function renderSettings(){
       ${syncEnabled?`<span style="color:var(--green)">✓ Sync active</span>`:`<span style="color:var(--sec)">Renseigne URL + Token sur chaque appareil</span>`}
       ${syncLast!=='0'?` · Dernière sync: ${new Date(parseInt(syncLast)).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}`:''}
     </div>
+  </div>
+  <div class="set-hd">Garmin Connect</div>
+  <div class="set-grp">
+    <div class="set-row" style="cursor:pointer" onclick="garminRefresh()">
+      <span class="set-row-icon" style="background:#000;border-radius:7px;width:29px;height:29px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+      <span class="set-row-lbl">${(()=>{const d=Garmin.cached();const ts=Garmin.fetchedAt();if(!d)return '⚠ Aucune donnée — config serveur ?';const age=Math.round((Date.now()-ts)/60000);return `✓ Sync : il y a ${age<1?'<1':age} min · ${d.sleep?.duration_hours||'?'}h sommeil${d.training_readiness?.score?` · Readiness ${d.training_readiness.score}`:''}`;})()}</span>
+      <div class="chevron"></div>
+    </div>
+    <div class="set-helper">Le fetcher Garmin tourne sur ton serveur Scaleway toutes les 4h.<br>Configure tes creds en SSH : <code>nano ~/lifeos-sync/.env</code> puis <code>./deploy.sh</code></div>
   </div>
   <div class="set-hd">Données</div>
   <div class="set-grp">
@@ -2455,6 +2529,8 @@ function init(){
     Sync.pull().then(updated=>{
       if(updated){render();}
     }).catch(()=>{});
+    // Refresh Garmin cache in background
+    Garmin.refresh().catch(()=>{});
   }
 
   // Auto-sync calendar events on startup

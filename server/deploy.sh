@@ -34,10 +34,20 @@ else
 fi
 TOKEN=$(cat "$TOKEN_FILE")
 
-# 2. .env for docker compose
-echo "SYNC_TOKEN=$TOKEN" > "$ENV_FILE"
+# 2. .env for docker compose — preserve existing Garmin creds if any
+GARMIN_EMAIL_VAL=""
+GARMIN_PASSWORD_VAL=""
+if [ -f "$ENV_FILE" ]; then
+  GARMIN_EMAIL_VAL=$(grep -E '^GARMIN_EMAIL=' "$ENV_FILE" | sed 's/^GARMIN_EMAIL=//' || true)
+  GARMIN_PASSWORD_VAL=$(grep -E '^GARMIN_PASSWORD=' "$ENV_FILE" | sed 's/^GARMIN_PASSWORD=//' || true)
+fi
+{
+  echo "SYNC_TOKEN=$TOKEN"
+  echo "GARMIN_EMAIL=$GARMIN_EMAIL_VAL"
+  echo "GARMIN_PASSWORD=$GARMIN_PASSWORD_VAL"
+} > "$ENV_FILE"
 chmod 600 "$ENV_FILE"
-ok ".env written"
+ok ".env written (Garmin creds preserved if previously set)"
 
 # 3. Caddyfile block (idempotent)
 if ! grep -q "^$DOMAIN" "$CADDYFILE"; then
@@ -72,7 +82,13 @@ for i in $(seq 1 20); do
   echo -n "."; sleep 1
 done
 
-# 7. Final report
+# 7. Garmin status report
+GARMIN_STATUS="(not configured)"
+if [ -n "$GARMIN_EMAIL_VAL" ] && [ -n "$GARMIN_PASSWORD_VAL" ]; then
+  GARMIN_STATUS="✓ enabled — first fetch starting now (check: docker logs lifeos-garmin)"
+fi
+
+# 8. Final report
 cat <<EOF
 
 ═══════════════════════════════════════════════════════════
@@ -81,12 +97,18 @@ cat <<EOF
 
  URL    https://$DOMAIN
  Token  $TOKEN
+ Garmin $GARMIN_STATUS
 
- Add these in Life OS → Paramètres → Synchronisation
+ Add URL+Token in Life OS → Paramètres → Synchronisation
  on every device you want synced.
 
- Verify HTTPS once DNS has propagated:
+ To enable Garmin:
+   nano $ENV_FILE          (set GARMIN_EMAIL and GARMIN_PASSWORD)
+   ./deploy.sh             (re-run to apply)
+
+ Verify endpoints:
    curl https://$DOMAIN/api/health
+   curl -H "Authorization: Bearer $TOKEN" https://$DOMAIN/api/garmin
 
 ═══════════════════════════════════════════════════════════
 EOF

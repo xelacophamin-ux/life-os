@@ -68,6 +68,17 @@ const server = http.createServer((req, res) => {
     return json(res, 200, readData());
   }
 
+  if (url.pathname === '/api/garmin' && req.method === 'GET') {
+    try {
+      const raw = fs.readFileSync(path.join(DATA_DIR, 'garmin.json'), 'utf-8');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(raw);
+    } catch (e) {
+      json(res, 404, { error: 'no garmin data yet', detail: e.message });
+    }
+    return;
+  }
+
   if (url.pathname === '/api/data' && req.method === 'PUT') {
     let body = '';
     let oversize = false;
