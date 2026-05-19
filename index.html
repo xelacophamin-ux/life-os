@@ -37,7 +37,7 @@ html,body{height:100%;overflow:hidden;background:#F2F2F7;font-family:-apple-syst
   font-family:inherit;padding:8px 0;min-width:64px;text-align:right}
 /* wrap fills shell; screen is repositioned so content never hides behind nav/tab-bar */
 .wrap{flex:1;overflow:hidden;position:relative}
-.screen{position:absolute;top:54px;left:0;right:0;bottom:58px;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg)}
+.screen{position:absolute;top:64px;left:0;right:0;bottom:58px;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg)}
 .screen.slide-out{transform:translateX(-30%);transition:transform .3s ease;pointer-events:none}
 .screen.slide-in{transform:translateX(100%)}
 .screen.slide-in.active{transform:translateX(0);transition:transform .3s ease}
@@ -65,14 +65,14 @@ html,body{height:100%;overflow:hidden;background:#F2F2F7;font-family:-apple-syst
 /* PWA standalone (home screen icon): full safe-area support top + bottom */
 @media(display-mode:standalone){
   .nav{height:calc(54px + env(safe-area-inset-top,0px));padding-top:env(safe-area-inset-top,0px)}
-  .screen{top:calc(54px + env(safe-area-inset-top,0px));bottom:calc(58px + env(safe-area-inset-bottom,0px))}
+  .screen{top:calc(64px + env(safe-area-inset-top,0px));bottom:calc(58px + env(safe-area-inset-bottom,0px))}
   .tab-bar{height:calc(58px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px)}
   .fab-settings{top:calc(env(safe-area-inset-top,0px) + 12px)}
   .rte-kb-toolbar{bottom:calc(58px + env(safe-area-inset-bottom,0px))}
 }
 /* JS-detected standalone (more reliable on iOS than media query) */
 html.ios-standalone .nav{height:calc(54px + env(safe-area-inset-top,0px));padding-top:env(safe-area-inset-top,0px)}
-html.ios-standalone .screen{top:calc(54px + env(safe-area-inset-top,0px));bottom:calc(58px + env(safe-area-inset-bottom,0px))}
+html.ios-standalone .screen{top:calc(64px + env(safe-area-inset-top,0px));bottom:calc(58px + env(safe-area-inset-bottom,0px))}
 html.ios-standalone .tab-bar{height:calc(58px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px)}
 html.ios-standalone .fab-settings{top:calc(env(safe-area-inset-top,0px) + 12px)}
 html.ios-standalone .rte-kb-toolbar{bottom:calc(58px + env(safe-area-inset-bottom,0px))}
