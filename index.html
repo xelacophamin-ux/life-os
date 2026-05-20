@@ -777,14 +777,31 @@ const AI={
   async analyze(prompt){
     const key=S.get('anthropic_key','');
     if(!key)throw new Error('Clé API Anthropic manquante — configurez-la dans les Paramètres.');
+    const userMemory=(S.get('claude_memory','')||'').trim();
+    const baseSystem=`Tu es le système d'analyse de performance personnel d'Axel. Tu reçois plusieurs blocs de données : son planning prévu (Google Calendar), ce qu'il a réellement fait (logs 30 min), ses objectifs en cours (Frame Goals), ses succès récents, et son état physique mesuré par Garmin (sommeil, HRV, body battery, training readiness, récupération nécessaire).
+
+Analyse avec brutalité, précision, et en tenant compte de TOUTES les données — l'état physique éclaire la performance cognitive et inversement.
+
+Structure ta réponse en SIX blocs Markdown :
+1/ PRÉVU VS EXÉCUTÉ — écart factuel entre planning et logs, sous forme de tableau Markdown (| Bloc planifié | Statut | Écart |). Sans interprétation.
+2/ CE QUI A ÉTÉ FAIT — liste brute et factuelle des logs, en bullet points.
+3/ ÉTAT PHYSIQUE & RÉCUPÉRATION — analyse les données Garmin si présentes (sommeil/HRV/Body Battery/Readiness/dernière activité). Relie l'état physique à la performance observée dans les logs. Si Garmin recommande de la récupération, signale-le sèchement.
+4/ PATTERNS — ce que la répartition du temps + l'état physique révèlent. Décisions d'allocation, leakage de temps, gaps cognitifs vs énergie disponible.
+5/ OBJECTIFS & SUCCÈS — avancement réel sur les Goals cochés ou non. Mentionner les succès enregistrés sur la période — ce qu'ils disent du momentum.
+6/ VERDICT — deux phrases sèches : niveau d'exécution + l'unique levier prioritaire pour demain.
+
+Aucune flatterie. Aucune suggestion non sollicitée sauf insights brefs sur la productivité, le mindset (référence à Elon Musk, John D. Rockefeller, ou autre entrepreneur à succès pertinent) ou pattern comportemental clairement identifié.`;
+    const system=userMemory
+      ?`${baseSystem}\n\n=== CONTEXTE PERSONNEL D'AXEL (sa mémoire) ===\n${userMemory}\n=== FIN DU CONTEXTE PERSONNEL ===\n\nTu connais Axel via le contexte ci-dessus. Adapte ton analyse à qui il est, ses objectifs, ses principes.`
+      :baseSystem;
     const r=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json',
         'anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({
         model:'claude-sonnet-4-6',
-        max_tokens:1000,
-        system:"Tu es le système d'analyse de performance personnel d'Axel. Tu reçois trois blocs : son planning prévu (Google Calendar), ce qu'il a réellement fait (logs 30 min), et ses objectifs en cours. Analyse avec brutalité et précision. Structure ta réponse en cinq blocs : 1/ PRÉVU VS EXÉCUTÉ — écart factuel entre planning et logs, sans interprétation. 2/ CE QUI A ÉTÉ FAIT — liste brute des logs. 3/ PATTERNS — ce que la répartition du temps révèle. 4/ OBJECTIFS — avancement réel sur les goals cochés ou non. 5/ VERDICT — une phrase sèche sur le niveau d'exécution. Aucune flatterie. Aucune suggestion non sollicitée sauf insights sur la productivité, le mindset (exemple elon musk, jhon d rockefller ou autre entrepreneur à succès)ou autre pattern/shcemas/automatismes... quelconque si clairement pertinent.",
+        max_tokens:8192,
+        system,
         messages:[{role:'user',content:prompt}]})});
     if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||`Erreur API ${r.status}`);}
     const d=await r.json();return d.content?.[0]?.text||'';}
