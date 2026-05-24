@@ -441,6 +441,17 @@ html.ios-standalone .rte-kb-toolbar{bottom:calc(58px + env(safe-area-inset-botto
 .recap-ctx-row:last-child{border:none}
 .recap-ctx-label{font-size:14px;color:var(--sec)}
 .recap-ctx-val{font-size:14px;font-weight:600;color:var(--text)}
+.recap-date-picker{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);
+  border-radius:10px;margin-bottom:12px;flex-wrap:wrap}
+.recap-date-label{font-size:13px;color:var(--sec);font-weight:500;flex-shrink:0}
+.recap-date-input{flex:1;min-width:130px;border:none;background:transparent;outline:none;
+  font-family:inherit;font-size:15px;color:var(--blue);font-weight:600;padding:2px 0;
+  -webkit-appearance:none;appearance:none}
+.recap-date-input::-webkit-calendar-picker-indicator{opacity:.5;cursor:pointer}
+.recap-date-reset{background:var(--bg);border:none;color:var(--text);font-family:inherit;
+  font-size:12px;font-weight:600;padding:6px 10px;border-radius:6px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent}
+.recap-date-reset:active{background:rgba(0,0,0,.08)}
 .recap-result{background:var(--card);border-radius:12px;padding:16px;margin-bottom:16px;line-height:1.7}
 .recap-result p{font-size:15px;margin-bottom:10px}
 .recap-result h1{font-size:22px;font-weight:700;margin:20px 0 10px;color:var(--text);letter-spacing:-.3px}
@@ -919,7 +930,14 @@ const Recap={
     const logData=Log.allContent(dates);
     const start=dates[0];const end=dates[dates.length-1];
     const calEvts=Cal.cachedRange(start,D.addDays(end,1));
-    let prompt=`=== PLANNING (Google Calendar) ===\n`;
+    // Period header so Claude knows the exact day(s) being analyzed
+    const today=new Date();const todayKey=D.key(today);
+    const coversToday=dates.some(dt=>D.key(dt)===todayKey);
+    let prompt=`=== PÉRIODE ANALYSÉE ===\n`;
+    if(type==='day')prompt+=`Jour : ${D.frenchLong(start)} (${D.key(start)})${coversToday?' — aujourd\'hui':' — recap rétroactif'}\n`;
+    else if(type==='week')prompt+=`Semaine : ${D.frenchLong(start)} → ${D.frenchLong(end)}${coversToday?' — inclut aujourd\'hui':' — recap rétroactif'}\n`;
+    else prompt+=`Mois : ${D.frenchMonthYear(start)} (${dates.length} jours)${coversToday?'':' — recap rétroactif'}\n`;
+    prompt+=`\n=== PLANNING (Google Calendar) ===\n`;
     if(calEvts.length===0)prompt+='Aucun événement calendrier pour cette période.\n';
     else calEvts.forEach(ev=>{
       const s=ev.start?.dateTime?new Date(ev.start.dateTime):null;
@@ -939,7 +957,9 @@ const Recap={
       const d=new Date(s.ts);
       prompt+=`${D.key(d)} ${s.emoji||'🏆'} : ${s.text}\n`;
     });
-    prompt+=Garmin.promptSummary();
+    // Only include Garmin if the recap covers today (Garmin snapshot is current state only)
+    if(coversToday)prompt+=Garmin.promptSummary();
+    else prompt+=`\n=== GARMIN ===\nDonnées physiques indisponibles pour cette période rétroactive (Garmin ne stocke qu'un snapshot du jour courant).\n`;
     return prompt;}
 };
 
@@ -953,6 +973,7 @@ const A={
   calView:'week',
   calMiniDate:new Date(),
   recapType:'day',
+  recapDate:null, // ISO 'YYYY-MM-DD' for Jour/Semaine/Mois pickup; null = today
   recapLoading:false,
   recapText:null,
   recapViewKey:null,
@@ -2112,23 +2133,35 @@ window.garminRefresh=async function(){
 
 function renderRecap(){
   const type=A.recapType;
-  const today=new Date();let dates=[];let ctxLabel='';let ctxDates='';
-  if(type==='day'){dates=[today];ctxLabel=D.frenchLong(today);ctxDates=D.key(today);}
-  else if(type==='week'){dates=D.weekDates(today);ctxLabel='Semaine en cours';
+  const today=new Date();
+  // Effective base date: user-picked or today
+  const baseDate=A.recapDate?new Date(A.recapDate+'T12:00:00'):today;
+  const todayIso=`${today.getFullYear()}-${p2(today.getMonth()+1)}-${p2(today.getDate())}`;
+  const baseIso=`${baseDate.getFullYear()}-${p2(baseDate.getMonth()+1)}-${p2(baseDate.getDate())}`;
+  let dates=[];let ctxLabel='';let ctxDates='';
+  if(type==='day'){dates=[baseDate];ctxLabel=D.frenchLong(baseDate);ctxDates=D.key(baseDate);}
+  else if(type==='week'){dates=D.weekDates(baseDate);ctxLabel=A.recapDate?'Semaine contenant le '+D.frenchLong(baseDate):'Semaine en cours';
     ctxDates=`${D.key(dates[0])} → ${D.key(dates[6])}`;}
-  else{const first=new Date(today.getFullYear(),today.getMonth(),1);
-    const last=new Date(today.getFullYear(),today.getMonth()+1,0);
+  else{const first=new Date(baseDate.getFullYear(),baseDate.getMonth(),1);
+    const last=new Date(baseDate.getFullYear(),baseDate.getMonth()+1,0);
     const allDays=[];let d=new Date(first);while(d<=last){allDays.push(new Date(d));d=D.addDays(d,1);}
-    dates=allDays;ctxLabel=D.frenchMonthYear(today);ctxDates=D.monthKey(today);}
+    dates=allDays;ctxLabel=D.frenchMonthYear(baseDate);ctxDates=D.monthKey(baseDate);}
   const logCount=Log.allContent(dates).length;
   const calCount=Cal.cachedRange(dates[0],D.addDays(dates[dates.length-1],1)).length;
   const hist=Recap.history(type);
+  const pickerLabel=type==='day'?'Date du jour':type==='week'?'Date dans la semaine':'Date dans le mois';
   return`
 <div class="recap-body">
   <div class="seg">
     <button class="seg-btn${type==='day'?' on':''}" onclick="recapSetType('day')">Jour</button>
     <button class="seg-btn${type==='week'?' on':''}" onclick="recapSetType('week')">Semaine</button>
     <button class="seg-btn${type==='month'?' on':''}" onclick="recapSetType('month')">Mois</button>
+  </div>
+  <div class="recap-date-picker">
+    <label class="recap-date-label">${pickerLabel}</label>
+    <input type="date" class="recap-date-input" value="${baseIso}" max="${todayIso}"
+      onchange="recapSetDate(this.value)">
+    ${A.recapDate?`<button class="recap-date-reset" onclick="recapSetDate('')">Aujourd'hui</button>`:''}
   </div>
   <div class="recap-ctx">
     <div class="recap-ctx-title">${ctxLabel}</div>
@@ -2220,21 +2253,28 @@ window.recapSetType=function(t){
   A.recapType=t;A.recapText=null;A.recapLoading=false;A.recapViewKey=null;
   refreshRecapSection();};
 
+window.recapSetDate=function(iso){
+  A.recapDate=iso||null;A.recapText=null;A.recapViewKey=null;
+  refreshRecapSection();};
+
 window.triggerRecap=async function(){
-  const today=new Date();let dates=[];
-  if(A.recapType==='day')dates=[today];
-  else if(A.recapType==='week')dates=D.weekDates(today);
-  else{const first=new Date(today.getFullYear(),today.getMonth(),1);
-    const last=new Date(today.getFullYear(),today.getMonth()+1,0);
+  const baseDate=A.recapDate?new Date(A.recapDate+'T12:00:00'):new Date();
+  let dates=[];
+  if(A.recapType==='day')dates=[baseDate];
+  else if(A.recapType==='week')dates=D.weekDates(baseDate);
+  else{const first=new Date(baseDate.getFullYear(),baseDate.getMonth(),1);
+    const last=new Date(baseDate.getFullYear(),baseDate.getMonth()+1,0);
     let d=new Date(first);while(d<=last){dates.push(new Date(d));d=D.addDays(d,1);}}
   A.recapLoading=true;A.recapText=null;refreshRecapSection();
   try{
-    // Refresh Garmin cache so the recap uses today's data
-    await Garmin.refresh().catch(()=>{});
+    // Refresh Garmin cache if recap covers today (otherwise data is irrelevant)
+    const todayKey=D.key(new Date());
+    const coversToday=dates.some(dt=>D.key(dt)===todayKey);
+    if(coversToday)await Garmin.refresh().catch(()=>{});
     const prompt=Recap.buildPrompt(A.recapType,dates);
     const result=await AI.analyze(prompt);
     A.recapText=result;A.recapLoading=false;
-    Recap.save(A.recapType,today,result);
+    Recap.save(A.recapType,baseDate,result);
     refreshRecapSection();}
   catch(e){A.recapLoading=false;refreshRecapSection();alert('Erreur: '+e.message);}};
 
