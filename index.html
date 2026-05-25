@@ -2135,7 +2135,18 @@ function initCalendar(){
   const scroll=document.getElementById('cal-scroll');
   if(scroll){const now=new Date();const offset=(now.getHours()*60+now.getMinutes())/60*60;
     scroll.scrollTop=Math.max(0,offset-120);}
-  renderWeekEvents();}
+  renderWeekEvents();
+  // Trigger a background refresh of the visible week so events stay fresh
+  // (with silent OAuth refresh if the token is expired)
+  (async()=>{
+    if(Cal.clientId()&&!Cal.valid()){await silentOAuthRefresh().catch(()=>{});}
+    if(!Cal.valid())return;
+    const wdates=D.weekDates(A.calDate);
+    const start=new Date(wdates[0]);start.setHours(0,0,0,0);
+    const end=D.addDays(wdates[6],1);
+    await Cal.fetchRange(start,end).catch(()=>{});
+    renderWeekEvents();
+  })();}
 
 async function renderWeekEvents(){
   if(!Cal.valid())return;
@@ -2650,10 +2661,21 @@ window.triggerRecap=async function(){
     let d=new Date(first);while(d<=last){dates.push(new Date(d));d=D.addDays(d,1);}}
   A.recapLoading=true;A.recapText=null;refreshRecapSection();
   try{
-    // Refresh Garmin cache if recap covers today (otherwise data is irrelevant)
+    // 1. Ensure Google Calendar token is fresh (silent refresh if expired)
+    if(Cal.clientId()&&!Cal.valid()){
+      await silentOAuthRefresh().catch(()=>{});
+    }
+    // 2. Force-fetch calendar events for the recap period (bypasses stale cache)
+    if(Cal.valid()){
+      const calStart=new Date(dates[0]);calStart.setHours(0,0,0,0);
+      const calEnd=new Date(dates[dates.length-1]);calEnd.setHours(23,59,59,999);
+      await Cal.fetchRange(calStart,D.addDays(calEnd,1)).catch(()=>{});
+    }
+    // 3. Refresh Garmin if recap covers today
     const todayKey=D.key(new Date());
     const coversToday=dates.some(dt=>D.key(dt)===todayKey);
     if(coversToday)await Garmin.refresh().catch(()=>{});
+    // 4. Build prompt with now-fresh cache
     const prompt=Recap.buildPrompt(A.recapType,dates);
     const result=await AI.analyze(prompt);
     A.recapText=result;A.recapLoading=false;
@@ -2885,35 +2907,39 @@ function checkOAuthCallback(){
 
 // Silent token refresh via hidden iframe (no page reload)
 function silentOAuthRefresh(){
-  if(!Cal.clientId())return;
-  const scope='https://www.googleapis.com/auth/calendar.readonly';
-  const redir=(location.origin+location.pathname).replace(/\/$/,'');
-  const url=`https://accounts.google.com/o/oauth2/v2/auth`+
-    `?client_id=${encodeURIComponent(Cal.clientId())}`+
-    `&redirect_uri=${encodeURIComponent(redir)}`+
-    `&response_type=token&scope=${encodeURIComponent(scope)}&prompt=none`;
-  const iframe=document.createElement('iframe');
-  iframe.style.cssText='display:none;position:fixed;width:0;height:0;top:-200px;left:-200px';
-  document.body.appendChild(iframe);
-  let done=false;
-  const cleanup=()=>{try{document.body.removeChild(iframe);}catch(e){}};
-  const check=setInterval(()=>{
-    try{
-      const loc=iframe.contentWindow.location;
-      if(loc.origin===location.origin){
-        done=true;clearInterval(check);cleanup();
-        const hp=new URLSearchParams(loc.hash.substring(1));
-        const t=hp.get('access_token');const exp=hp.get('expires_in');const er=hp.get('error');
-        if(t){
-          S.set('google_token',t);
-          S.set('google_token_expiry',String(Date.now()+parseInt(exp||'3600')*1000));
-          S.del('oauth_silent_failed_at');
-        } else if(er){S.set('oauth_silent_failed_at',String(Date.now()));}
-      }
-    }catch(e){/* cross-origin, still on Google */}
-  },300);
-  setTimeout(()=>{if(!done){clearInterval(check);cleanup();}},15000);
-  iframe.src=url;
+  return new Promise((resolve)=>{
+    if(!Cal.clientId()){resolve(false);return;}
+    const scope='https://www.googleapis.com/auth/calendar.readonly';
+    const redir=(location.origin+location.pathname).replace(/\/$/,'');
+    const url=`https://accounts.google.com/o/oauth2/v2/auth`+
+      `?client_id=${encodeURIComponent(Cal.clientId())}`+
+      `&redirect_uri=${encodeURIComponent(redir)}`+
+      `&response_type=token&scope=${encodeURIComponent(scope)}&prompt=none`;
+    const iframe=document.createElement('iframe');
+    iframe.style.cssText='display:none;position:fixed;width:0;height:0;top:-200px;left:-200px';
+    document.body.appendChild(iframe);
+    let done=false;
+    const cleanup=()=>{try{document.body.removeChild(iframe);}catch(e){}};
+    const check=setInterval(()=>{
+      try{
+        const loc=iframe.contentWindow.location;
+        if(loc.origin===location.origin){
+          done=true;clearInterval(check);cleanup();
+          const hp=new URLSearchParams(loc.hash.substring(1));
+          const t=hp.get('access_token');const exp=hp.get('expires_in');const er=hp.get('error');
+          if(t){
+            S.set('google_token',t);
+            S.set('google_token_expiry',String(Date.now()+parseInt(exp||'3600')*1000));
+            S.del('oauth_silent_failed_at');
+            resolve(true);
+          } else if(er){S.set('oauth_silent_failed_at',String(Date.now()));resolve(false);}
+          else resolve(false);
+        }
+      }catch(e){/* cross-origin, still on Google */}
+    },300);
+    setTimeout(()=>{if(!done){clearInterval(check);cleanup();resolve(false);}},15000);
+    iframe.src=url;
+  });
 }
 
 // ══════════════════════════════════════════════════════════════
